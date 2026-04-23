@@ -111,8 +111,8 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         )
         .call(g => g.selectAll(".tick line")
             .attr("stroke", "#aaa")
-            .attr("stroke-opacity", 0.1)    // same as grid lines
-            .attr("y2", height - marginBottom)  // extend all the way down like grid lines
+            .attr("stroke-opacity", 0.25)
+            .attr("y2", height - marginBottom)
         )
         .call(g => g.selectAll(".domain").remove());
 
@@ -179,6 +179,25 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                     hidden.add(name);
                     d3.select(this).style("opacity", 0.3);
                 }
+                svg.selectAll("circle")
+                    .style("display", d => hidden.has(d.data.name) ? "none" : null);
+            })
+            .on("dblclick", function () {
+                const allOthers = color.domain().filter(n => n !== name);
+                const isAlreadySolo = allOthers.every(n => hidden.has(n));
+
+                if (isAlreadySolo) {
+                    // double clicking again restores all
+                    hidden.clear();
+                    legend.selectAll("div").style("opacity", 1);
+                } else {
+                    // hide everything except this one
+                    allOthers.forEach(n => hidden.add(n));
+                    hidden.delete(name);
+                    legend.selectAll("div").style("opacity", 0.3);
+                    d3.select(this).style("opacity", 1);
+                }
+
                 svg.selectAll("circle")
                     .style("display", d => hidden.has(d.data.name) ? "none" : null);
             });
