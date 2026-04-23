@@ -61,20 +61,21 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("viewBox", [0, 0, width, height])
         .attr("style", "max-width: 100%; height: auto;");
 
-    var tooltip = d3.select("body").append("div")
-        .style("opacity", 0)
-        .style("position", "fixed")  // fixed instead of absolute
-        .style("background-color", "white")
-        .style("border", "solid")
-        .style("border-width", "1px")
-        .style("border-radius", "5px")
-        .style("padding", "10px")
-        .style("font-family", "Roboto")
-        .style("font-size", "14px")
-        .style("pointer-events", "none")
-        .style("word-wrap", "break-word")
-        .style("max-width", "200px")
-        .style("z-index", "9999");  // make sure it appears above everything
+var tooltip = d3.select("#chart-container").append("div")
+    .attr("class", "hrd-tooltip")
+    .style("opacity", 0)
+    .style("position", "fixed")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "1px")
+    .style("border-radius", "5px")
+    .style("padding", "10px")
+    .style("font-family", "Roboto")
+    .style("font-size", "14px")
+    .style("pointer-events", "none")
+    .style("word-wrap", "break-word")
+    .style("max-width", "200px")
+    .style("z-index", "99999");
 
     var mousemove = function (d) {
         tooltip
@@ -83,6 +84,8 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             .style("top", (d3.event.clientY - 28) + "px");
     }
     var mouseover = function (d) {
+        console.log("mouseover fired", d);
+
         tooltip.style("opacity", 1);
     }
 
