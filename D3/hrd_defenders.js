@@ -61,21 +61,21 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("viewBox", [0, 0, width, height])
         .attr("style", "max-width: 100%; height: auto;");
 
-var tooltip = d3.select("#chart-container").append("div")
-    .attr("class", "hrd-tooltip")
-    .style("opacity", 0)
-    .style("position", "fixed")
-    .style("background-color", "white")
-    .style("border", "solid")
-    .style("border-width", "1px")
-    .style("border-radius", "5px")
-    .style("padding", "10px")
-    .style("font-family", "Roboto")
-    .style("font-size", "14px")
-    .style("pointer-events", "none")
-    .style("word-wrap", "break-word")
-    .style("max-width", "200px")
-    .style("z-index", "99999");
+    var tooltip = d3.select("#chart-container").append("div")
+        .attr("class", "hrd-tooltip")
+        .style("opacity", 0)
+        .style("position", "fixed")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "1px")
+        .style("border-radius", "5px")
+        .style("padding", "10px")
+        .style("font-family", "Roboto")
+        .style("font-size", "14px")
+        .style("pointer-events", "none")
+        .style("word-wrap", "break-word")
+        .style("max-width", "200px")
+        .style("z-index", "99999");
 
     var mousemove = function (d) {
         tooltip
@@ -109,7 +109,14 @@ var tooltip = d3.select("#chart-container").append("div")
             .attr("text-anchor", "end")
             .attr("dy", -22)
         )
-        .call(g => g.selectAll(".tick line").clone().attr("stroke-opacity", 0.1).attr("y2", height - marginBottom))
+        .call(g => g.selectAll(".tick line")
+            .attr("stroke", "#aaa")
+        )
+        .call(g => g.selectAll(".tick line").clone()
+            .attr("stroke", "#aaa")
+            .attr("stroke-opacity", 0.1)
+            .attr("y2", height - marginBottom)
+        )
         .call(g => g.selectAll(".domain").remove());
 
     const g = svg.append("g")
