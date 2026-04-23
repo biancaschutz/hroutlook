@@ -17,7 +17,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const marginBottom = 10;
     const marginLeft = 200;
     const radius = 7.5;
-    const padding = 1.5;
+    const padding = 3;
 
     const x = d3.scaleLinear()
         .domain([0, d3.max(values)])
