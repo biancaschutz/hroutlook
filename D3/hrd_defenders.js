@@ -166,25 +166,42 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const hidden = new Set();
 
     color.domain().forEach(name => {
+
+        // Legend item container
         const item = legend.append("div")
-            .datum(name)                     // bind name
+            .datum(name)                     // bind series name
+            .attr("class", "legend-item")    // so opacity only applies to this
             .style("display", "flex")
             .style("align-items", "center")
             .style("gap", "6px")
             .style("cursor", "pointer")
-            .style("user-select", "none")    // prevent selection
+            .style("user-select", "none")    // prevent text selection
+            .on("click", function () {
+                if (hidden.has(name)) {
+                    hidden.delete(name);
+                    d3.select(this).style("opacity", 1);
+                } else {
+                    hidden.add(name);
+                    d3.select(this).style("opacity", 0.3);
+                }
+
+                svg.selectAll("circle")
+                    .style("display", d => hidden.has(d.data.name) ? "none" : null);
+            })
             .on("dblclick", function () {
                 const allOthers = color.domain().filter(n => n !== name);
                 const isAlreadySolo = allOthers.every(n => hidden.has(n));
 
                 if (isAlreadySolo) {
+                    // restore all
                     hidden.clear();
-                    legend.selectAll("div").style("opacity", 1);
+                    legend.selectAll(".legend-item").style("opacity", 1);
                 } else {
+                    // hide everything except this one
                     hidden.clear();
                     allOthers.forEach(n => hidden.add(n));
 
-                    legend.selectAll("div")
+                    legend.selectAll(".legend-item")
                         .style("opacity", d => d === name ? 1 : 0.3);
                 }
 
@@ -192,7 +209,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                     .style("display", d => hidden.has(d.data.name) ? "none" : null);
             });
 
-        // add the color box
+        // Color box
         item.append("div")
             .style("width", "15px")
             .style("height", "15px")
@@ -200,11 +217,12 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             .style("flex-shrink", "0")
             .style("user-select", "none");   // prevent selection
 
-        // add the text
+        // Text label
         item.append("span")
             .text(name)
             .style("user-select", "none");   // prevent selection
     });
+
 
 
     // intersection observer for scroll-based color changes
