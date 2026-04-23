@@ -111,11 +111,8 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         )
         .call(g => g.selectAll(".tick line")
             .attr("stroke", "#aaa")
-        )
-        .call(g => g.selectAll(".tick line").clone()
-            .attr("stroke", "#aaa")
-            .attr("stroke-opacity", 0.1)
-            .attr("y2", height - marginBottom)
+            .attr("stroke-opacity", 0.1)    // same as grid lines
+            .attr("y2", height - marginBottom)  // extend all the way down like grid lines
         )
         .call(g => g.selectAll(".domain").remove());
 
@@ -127,12 +124,6 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .data(cat)
         .enter().append("g")
         .attr("transform", d => `translate(0,${y(d.key)})`);
-
-    g.append("line")
-        .attr("stroke", "#aaa")
-        .attr("stroke-opacity", 0.1)
-        .attr("x1", d => x(d3.min(d.values, v => v.value)))
-        .attr("x2", d => x(d3.max(d.values, v => v.value)));
 
     g.append("g")
         .selectAll("circle")
