@@ -61,29 +61,29 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("viewBox", [0, 0, width, height])
         .attr("style", "max-width: 100%; height: auto;");
 
-    var tooltip = d3.select("#chart-container").append("div")
+    var tooltip = d3.select("body").append("div")
         .style("opacity", 0)
-        .style("position", "absolute")
+        .style("position", "fixed")  // fixed instead of absolute
         .style("background-color", "white")
         .style("border", "solid")
         .style("border-width", "1px")
         .style("border-radius", "5px")
         .style("padding", "10px")
         .style("font-family", "Roboto")
-        .style("font-size", "16px")
+        .style("font-size", "14px")
         .style("pointer-events", "none")
         .style("word-wrap", "break-word")
-        .style("max-width", "200px");
-
-    var mouseover = function (d) {
-        tooltip.style("opacity", 1);
-    }
+        .style("max-width", "200px")
+        .style("z-index", "9999");  // make sure it appears above everything
 
     var mousemove = function (d) {
         tooltip
             .html(`In 2025, there were <strong>${d.data.value} confirmed killings</strong> of ${d.data.Category} in ${d.data.name}`)
-            .style("left", (d3.event.pageX + 15) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
+            .style("left", (d3.event.clientX + 15) + "px")  // clientX pairs with fixed positioning
+            .style("top", (d3.event.clientY - 28) + "px");
+    }
+    var mouseover = function (d) {
+        tooltip.style("opacity", 1);
     }
 
     var mouseleave = function (d) {
