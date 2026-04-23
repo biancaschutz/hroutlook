@@ -84,15 +84,15 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             .style("top", (d3.event.clientY - 28) + "px");
     }
     var mouseover = function (d) {
-        console.log("mouseover fired", d);
-
-        tooltip.style("opacity", 1);
+        tooltip.transition()
+            .duration(0)      // cancel any ongoing fade-out
+            .style("opacity", 1);
     }
 
     var mouseleave = function (d) {
         tooltip
             .transition()
-            .duration(200)
+            .duration(500)    // increase delay before hiding
             .style("opacity", 0);
     }
 
