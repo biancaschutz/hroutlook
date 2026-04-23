@@ -15,7 +15,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const marginTop = 30;
     const marginRight = 10;
     const marginBottom = 10;
-    const marginLeft = 150;
+    const marginLeft = 200;
     const radius = 7.5;
     const padding = 1.5;
 
