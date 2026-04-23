@@ -171,6 +171,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             .style("align-items", "center")
             .style("gap", "6px")
             .style("cursor", "pointer")
+            .style("user-select", "none")
             .on("click", function () {
                 if (hidden.has(name)) {
                     hidden.delete(name);
@@ -179,6 +180,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                     hidden.add(name);
                     d3.select(this).style("opacity", 0.3);
                 }
+
                 svg.selectAll("circle")
                     .style("display", d => hidden.has(d.data.name) ? "none" : null);
             })
@@ -187,14 +189,17 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                 const isAlreadySolo = allOthers.every(n => hidden.has(n));
 
                 if (isAlreadySolo) {
-                    // double clicking again restores all
+                    // restore all
                     hidden.clear();
                     legend.selectAll("div").style("opacity", 1);
                 } else {
                     // hide everything except this one
+                    hidden.clear();
                     allOthers.forEach(n => hidden.add(n));
-                    hidden.delete(name);
-                    legend.selectAll("div").style("opacity", 0.3);
+
+                    legend.selectAll("div")
+                        .style("opacity", d => d === name ? 1 : 0.3);
+
                     d3.select(this).style("opacity", 1);
                 }
 
