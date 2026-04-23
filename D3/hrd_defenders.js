@@ -120,6 +120,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     g.append("line")
         .attr("stroke", "#aaa")
+        .attr("stroke-opacity", 0.1)
         .attr("x1", d => x(d3.min(d.values, v => v.value)))
         .attr("x2", d => x(d3.max(d.values, v => v.value)));
 
