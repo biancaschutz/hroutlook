@@ -167,55 +167,45 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     color.domain().forEach(name => {
         const item = legend.append("div")
+            .datum(name)                     // bind name
             .style("display", "flex")
             .style("align-items", "center")
             .style("gap", "6px")
             .style("cursor", "pointer")
-            .style("user-select", "none")
-            .on("click", function () {
-                if (hidden.has(name)) {
-                    hidden.delete(name);
-                    d3.select(this).style("opacity", 1);
-                } else {
-                    hidden.add(name);
-                    d3.select(this).style("opacity", 0.3);
-                }
-
-                svg.selectAll("circle")
-                    .style("display", d => hidden.has(d.data.name) ? "none" : null);
-            })
+            .style("user-select", "none")    // prevent selection
             .on("dblclick", function () {
                 const allOthers = color.domain().filter(n => n !== name);
                 const isAlreadySolo = allOthers.every(n => hidden.has(n));
 
                 if (isAlreadySolo) {
-                    // restore all
                     hidden.clear();
                     legend.selectAll("div").style("opacity", 1);
                 } else {
-                    // hide everything except this one
                     hidden.clear();
                     allOthers.forEach(n => hidden.add(n));
 
                     legend.selectAll("div")
                         .style("opacity", d => d === name ? 1 : 0.3);
-
-                    d3.select(this).style("opacity", 1);
                 }
 
                 svg.selectAll("circle")
                     .style("display", d => hidden.has(d.data.name) ? "none" : null);
             });
 
+        // add the color box
         item.append("div")
             .style("width", "15px")
             .style("height", "15px")
             .style("background", color(name))
-            .style("flex-shrink", "0");
+            .style("flex-shrink", "0")
+            .style("user-select", "none");   // prevent selection
 
+        // add the text
         item.append("span")
-            .text(name);
+            .text(name)
+            .style("user-select", "none");   // prevent selection
     });
+
 
     // intersection observer for scroll-based color changes
     const observer = new IntersectionObserver((entries) => {
