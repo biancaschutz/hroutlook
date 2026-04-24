@@ -34,9 +34,10 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     // functions for tooltip 
     var mousemove = function (d) {
+        const ttWidth = tooltip.node().offsetWidth;
         tooltip
             .html(`In 2021, ${d.data.Location} had a life expectancy of ${d.data.FactValueNumeric.toFixed(0)} years at birth.`)
-            .style("right", (d3.event.clientX + 15) + "px")  // clientX pairs with fixed positioning
+            .style("left", (d3.event.clientX - ttWidth - 15) + "px")
             .style("top", (d3.event.clientY - 28) + "px");
     }
     var mouseover = function (d) {
@@ -260,7 +261,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         });
     }, { threshold: 0.5 });
 
-        ["lifeexp-default", "lifeexp-africa", "lifeexp-higher", "lifeexp-europe"].forEach(id => {
+    ["lifeexp-default", "lifeexp-africa", "lifeexp-higher", "lifeexp-europe"].forEach(id => {
         const el = document.getElementById(id);
         if (el) observer.observe(el);
     });
