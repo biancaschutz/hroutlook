@@ -154,7 +154,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     // adding tooltip 
     var tooltip = d3.select("#chart-container-lifeexp").append("div")
-        .attr("class", "hrd-tooltip")
+        .attr("class", "lifeexp-tooltip")
         .style("opacity", 0)
         .style("position", "fixed")
         .style("background-color", "white")
@@ -173,7 +173,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     document.getElementById("chart-container-lifeexp").appendChild(svg.node());
 
     // legend
-    const legend = d3.select("#legend-container-hrd")
+    const legend = d3.select("#legend-container-lifeexp")
         .append("div")
         .style("box-sizing", "border-box")
         .style("display", "flex")
