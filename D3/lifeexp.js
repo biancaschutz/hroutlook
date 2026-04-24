@@ -36,7 +36,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     var mousemove = function (d) {
         tooltip
             .html(`In 2021, ${d.data.Location} had a life expectancy of ${d.data.FactValueNumeric.toFixed(0)} years at birth.`)
-            .style("left", (d3.event.clientX + 15) + "px")  // clientX pairs with fixed positioning
+            .style("right", (d3.event.clientX + 15) + "px")  // clientX pairs with fixed positioning
             .style("top", (d3.event.clientY - 28) + "px");
     }
     var mouseover = function (d) {
