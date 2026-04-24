@@ -165,7 +165,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             byValue.forEach(group => {
                 group.values.forEach((v, i) => {
                     const half = (group.values.length - 1) / 2;
-                    v.__xOffset = (i - half) * (radius * 2 + padding);
+                    v.__xOffset = (i - half) * (radius * 2);
                 });
             });
             return d.values;
