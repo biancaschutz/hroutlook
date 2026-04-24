@@ -152,7 +152,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .on("mouseleave", mouseleave);
 
     // adding tooltip 
-    var tooltip = d3.select("#chart-container").append("div")
+    var tooltip = d3.select("#chart-container-lifeexp").append("div")
         .attr("class", "hrd-tooltip")
         .style("opacity", 0)
         .style("position", "fixed")
@@ -168,8 +168,11 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .style("max-width", "200px")
         .style("z-index", "99999");
 
+
+    document.getElementById("chart-container-lifeexp").appendChild(svg.node());
+
     // legend
-    const legend = d3.select("#legend-container")
+    const legend = d3.select("#legend-container-lifeexp")
         .append("div")
         .style("box-sizing", "border-box")
         .style("display", "flex")

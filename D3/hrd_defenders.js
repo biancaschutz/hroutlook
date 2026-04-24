@@ -60,7 +60,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("viewBox", [0, 0, width, height])
         .attr("style", "max-width: 100%; height: auto;");
 
-    var tooltip = d3.select("#chart-container").append("div")
+    var tooltip = d3.select("#chart-container-hrd").append("div")
         .attr("class", "hrd-tooltip")
         .style("opacity", 0)
         .style("position", "fixed")
@@ -148,10 +148,10 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .style("word-wrap", "break-word")
         .text(d => d.key);
 
-    document.getElementById("chart-container").appendChild(svg.node());
+    document.getElementById("chart-container-hrd").appendChild(svg.node());
 
     // legend
-    const legend = d3.select("#legend-container")
+    const legend = d3.select("#legend-container-hrd")
         .append("div")
         .style("box-sizing", "border-box")
         .style("display", "flex")
