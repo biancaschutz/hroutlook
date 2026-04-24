@@ -27,7 +27,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const marginLeft = isMobile ? 60 : 100;
     const marginBottom = 20;
     const marginTop = 40;
-    const height = isMobile ? regionNames.length * 250 : regionNames.length * 200;
+    const height = regionNames.length * 200;
 
     const radius = isMobile ? 3.5 : 5;
     const padding = isMobile ? 1.5 : 2.5;
@@ -125,7 +125,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("width", width)
         .attr("height", height)
         .attr("viewBox", [0, 0, width, height])
-        .attr("style", "max-width: 100%; height: auto;");
+        .attr("style", "max-width: 100%; height: auto; max-height: 100vh;");
 
     // adding the x-axis
     svg.append("g")
