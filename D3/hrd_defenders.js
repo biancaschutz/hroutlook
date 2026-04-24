@@ -1,4 +1,4 @@
-d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main/Flourish/flourish_data/hr_defenders_regional_category.csv", function (data) {
+d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main/data/hr_defenders_regional_category.csv", function (data) {
     data.forEach(d => d.value = +d.value);
 
     const cat = d3.nest()
