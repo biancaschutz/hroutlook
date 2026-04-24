@@ -180,7 +180,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("r", radius);
 
     g.append("foreignObject")
-        .attr("x", d => x(d3.min(d.values, v => v.value)) - (isMobile ? 96 : 156))
+        .attr("x", 0 - (isMobile ? 96 : 156))
         .attr("y", -8)
         .attr("width", isMobile ? 80 : 140)
         .attr("height", 40)
@@ -264,6 +264,14 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             .text(name)
             .style("user-select", "none");   // prevent selection
     });
+
+    d3.select("#legend-container-hrd")
+    .append("div")
+    .style("font-family", "Roboto, sans-serif")
+    .style("font-size", isMobile ? "11px" : "13px")
+    .style("color", "#666")
+    .style("padding", isMobile ? "4px 10px 10px 10px" : "4px 25px 10px 100px")
+    .text("Click on a region to hide or show it on the plot. Double click a region to isolate it.");
 
 
 
