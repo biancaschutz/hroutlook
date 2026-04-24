@@ -34,10 +34,11 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     // functions for tooltip 
     var mousemove = function (d) {
+        const ttWidth = tooltip.node().offsetWidth;
+
         tooltip
             .html(`In 2021, ${d.data.Location} had a life expectancy of ${d.data.FactValueNumeric.toFixed(0)} years at birth.`)
 
-        const ttWidth = tooltip.node().offsetWidth;
         const ttHeight = tooltip.node().offsetHeight;
         const mouseX = d3.event.clientX;
         const mouseY = d3.event.clientY;
