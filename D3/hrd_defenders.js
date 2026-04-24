@@ -29,11 +29,10 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .padding(1);
 
     const color = d3.scaleOrdinal()
-        .domain(['Central Asia and Southern Asia', 'Eastern Asia and South-eastern Asia',
-            'Latin America and the Caribbean', 'Northern America and Europe',
-            'Sub-Saharan Africa', 'Western Asia and Northern Africa'])
-        .range(['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#d55e00', '#cc79a7'])
-        .unknown("#ccc");
+            .domain(['Central Asia and Southern Asia', 'Eastern Asia and South-eastern Asia',
+                'Latin America and the Caribbean', 'Northern America and Europe',
+                'Sub-Saharan Africa', 'Western Asia and Northern Africa'])
+            .range(['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#d55e00', '#cc79a7']);
 
     const schemes = {
         "hrd-default": d3.scaleOrdinal()

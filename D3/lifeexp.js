@@ -1,0 +1,309 @@
+d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main/data/life_expectancy_beeswarm.csv", function (data) {
+    // Data preparation 
+    data.forEach(d => {
+        d.FactValueNumeric = +d.FactValueNumeric;
+    });
+
+    const region = d3.nest()
+        .key(d => d["Region Name"])
+        .entries(data);
+
+    region.forEach(l => {
+        l.values.forEach(v => v["Region Name"] = l.key);
+    });
+
+    const names = [...new Set(data.map(d => d.Location))];
+
+    const values = data.map(d => +d.FactValueNumeric);
+
+    const regionNames = region.map(d => d.key).sort();
+
+    console.log(regionNames);
+
+    // figure variables
+    const width = 928;
+    const marginRight = 20;
+    const marginLeft = 100;
+    const marginBottom = 20;
+    const marginTop = 40;
+    const height = regionNames.length * 200;
+
+    // Dot size and padding. 
+    const radius = 5;
+    const padding = 2.5;
+
+    // functions for tooltip 
+    var mousemove = function (d) {
+        tooltip
+            .html(`In 2021, ${d.data.Location} had a life expectancy of ${d.data.FactValueNumeric.toFixed(0)} years at birth.`)
+            .style("left", (d3.event.clientX + 15) + "px")  // clientX pairs with fixed positioning
+            .style("top", (d3.event.clientY - 28) + "px");
+    }
+    var mouseover = function (d) {
+        pinnedTooltip = false;
+        // reset any enlarged dot
+        svg.selectAll("circle")
+            .transition().duration(200)
+            .attr("r", radius);
+        tooltip.transition()
+            .duration(0)
+            .style("opacity", 1);
+    };
+
+    var mouseleave = function (d) {
+        if (!pinnedTooltip) {
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        }
+    };
+
+    const x = d3.scaleLinear()
+        .domain([d3.min(values) - 5, d3.max(values)])
+        .range([marginLeft, width - marginRight]);
+
+    const y = d3.scalePoint()
+        .domain(region.map(d => d.key).sort())
+        .rangeRound([marginTop, height - marginBottom])
+        .padding(.4);
+
+    const color = d3.scaleOrdinal()
+        .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
+        .range(['#81ac31', '#16b5c5', '#f78e1e', '#b95380', '#8a69a1']);
+
+    const schemes = {
+        "lifeexp-default": d3.scaleOrdinal()
+            .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
+            .range(['#81ac31', '#16b5c5', '#f78e1e', '#b95380', '#8a69a1']),
+
+        "lifeexp-africa": d3.scaleOrdinal()
+            .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
+            .range(['#81ac31', '#ccc', '#ccc', '#ccc', '#ccc']),
+
+        "lifeexp-higher": d3.scaleOrdinal()
+            .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
+            .range(['#ccc', '#16b5c5', '#f78e1e', '#b95380', '#ccc']),
+
+        "lifeexp-europe": d3.scaleOrdinal()
+            .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
+            .range(['#ccc', '#ccc', '#ccc', '#b95380', '#ccc']),
+    };
+
+    const svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("viewBox", [0, 0, width, height])
+        .attr("style", "max-width: 100%; height: auto;");
+
+    // adding the x-axis
+    svg.append("g")
+        .attr("transform", `translate(0,${marginTop})`)
+        .call(d3.axisTop(x).ticks(null))
+        .call(g => g.selectAll("text")
+            .style("font-family", "Roboto")
+            .style("font-size", "16px")
+        )
+        .call(g => g.append("text")
+            .attr("fill", "currentColor")
+            .attr("transform", `translate(${width - marginRight},0)`)
+            .attr("text-anchor", "end")
+            .attr("dy", -22)
+        )
+        .call(g => g.selectAll(".tick line")
+            .attr("stroke", "#aaa")
+            .attr("stroke-opacity", 0.25)
+            .attr("y2", height - marginBottom)
+        )
+        .call(g => g.selectAll(".domain").remove());
+
+    // adding the y-axis
+    const g = svg.append("g")
+        .attr("text-anchor", "end")
+        .style("font-family", "Roboto")
+        .style("font-size", "16px")
+        .selectAll()
+        .data(region)
+        .enter().append("g")
+        .attr("transform", d => `translate(0,${y(d.key)})`);
+
+    g.append("foreignObject")
+        .attr("x", marginLeft - 160)
+        .attr("y", -8)
+        .attr("width", 140)
+        .attr("height", 40)
+        .append("xhtml:div")
+        .style("font-family", "Roboto")
+        .style("font-size", "16px")
+        .style("text-align", "right")
+        .style("word-wrap", "break-word")
+        .text(d => d.key);
+
+    // adding the dots
+    svg.append("g")
+        .selectAll("circle")
+        .data(dodge(data, { radius: radius * 2 + padding, x: d => x(d.FactValueNumeric) }))
+        .enter().append("circle")
+        .attr("cx", d => d.x)
+        .attr("cy", d => y(d.data["Region Name"]) - d.y)
+        .attr("r", radius)
+        .attr("fill", d => color(d.data["Region Name"]))
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave);
+
+    // adding tooltip 
+    var tooltip = d3.select("#chart-container").append("div")
+        .attr("class", "hrd-tooltip")
+        .style("opacity", 0)
+        .style("position", "fixed")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "1px")
+        .style("border-radius", "5px")
+        .style("padding", "10px")
+        .style("font-family", "Roboto")
+        .style("font-size", "14px")
+        .style("pointer-events", "none")
+        .style("word-wrap", "break-word")
+        .style("max-width", "200px")
+        .style("z-index", "99999");
+
+    // legend
+    const legend = d3.select("#legend-container")
+        .append("div")
+        .style("box-sizing", "border-box")
+        .style("display", "flex")
+        .style("flex-wrap", "wrap")
+        .style("gap", "10px")
+        .style("padding", "10px 25px 10px 100px")
+        .style("font-family", "Roboto")
+        .style("font-size", "16px")
+        .style("max-width", `${width}px`);
+
+    const hidden = new Set();
+
+    color.domain().forEach(name => {
+
+        // Legend item container
+        const item = legend.append("div")
+            .datum(name)                     // bind series name
+            .attr("class", "legend-item")    // so opacity only applies to this
+            .style("display", "flex")
+            .style("align-items", "center")
+            .style("gap", "6px")
+            .style("cursor", "pointer")
+            .style("user-select", "none")    // prevent text selection
+            .on("click", function () {
+                if (hidden.has(name)) {
+                    hidden.delete(name);
+                    d3.select(this).style("opacity", 1);
+                } else {
+                    hidden.add(name);
+                    d3.select(this).style("opacity", 0.3);
+                }
+
+                svg.selectAll("circle")
+                    .style("display", d => hidden.has(d.data["Region Name"]) ? "none" : null);
+            })
+            .on("dblclick", function () {
+                const allOthers = color.domain().filter(n => n !== name);
+                const isAlreadySolo = allOthers.every(n => hidden.has(n));
+
+                if (isAlreadySolo) {
+                    // restore all
+                    hidden.clear();
+                    legend.selectAll(".legend-item").style("opacity", 1);
+                } else {
+                    // hide everything except this one
+                    hidden.clear();
+                    allOthers.forEach(n => hidden.add(n));
+
+                    legend.selectAll(".legend-item")
+                        .style("opacity", d => d === name ? 1 : 0.3);
+                }
+
+                svg.selectAll("circle")
+                    .style("display", d => hidden.has(d.data["Region Name"]) ? "none" : null);
+            });
+
+        // Color box
+        item.append("div")
+            .style("width", "15px")
+            .style("height", "15px")
+            .style("background", color(name))
+            .style("flex-shrink", "0")
+            .style("user-select", "none");   // prevent selection
+
+        // Text label
+        item.append("span")
+            .text(name)
+            .style("user-select", "none");   // prevent selection
+    });
+
+
+
+    let pinnedTooltip = false;
+
+    // maps each scroll section to a specific country to highlight
+    const scrollHighlights = {
+        "lifeexp_default": null,
+        "lifeexp_africa": "Lesotho",
+        "lifeexp_higher": "Japan",
+        "lifeexp_europe": "Switzerland"
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const scheme = schemes[entry.target.id];
+                if (scheme) {
+                    svg.selectAll("circle")
+                        .transition()
+                        .duration(500)
+                        .attr("fill", d => scheme(d.data["Region Name"]));
+                }
+
+                // find the target country for this section
+                const targetCountry = scrollHighlights[entry.target.id];
+
+                if (targetCountry) {
+                    // find the dot's data point
+                    const targetDot = svg.selectAll("circle")
+                        .filter(d => d.data.Location === targetCountry);
+
+                    if (!targetDot.empty()) {
+                        const dotData = targetDot.datum();
+
+                        pinnedTooltip = true;
+
+                        tooltip
+                            .html(`In 2021, ${dotData.data.Location} had a life expectancy of ${dotData.data.FactValueNumeric} at birth.`)
+                            .style("opacity", 1)
+                            .style("left", (dotData.x + 160) + "px")   // position near the dot
+                            .style("top", (dotData.y + 80) + "px");
+
+                        // optionally enlarge the dot to draw attention
+                        targetDot
+                            .raise()  // bring to front
+                            .transition().duration(300)
+                            .attr("r", radius * 2);
+
+                        // shrink all other dots back
+                        svg.selectAll("circle")
+                            .filter(d => d.data.Location !== targetCountry)
+                            .transition().duration(300)
+                            .attr("r", radius);
+                    }
+                } else {
+                    // reset all dots to normal size when no highlight
+                    svg.selectAll("circle")
+                        .transition().duration(300)
+                        .attr("r", radius);
+                    if (!pinnedTooltip) {
+                        tooltip.style("opacity", 0);
+                    }
+                }
+            }
+        });
+    }, { threshold: 0.5 });
+});
