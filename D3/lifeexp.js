@@ -30,7 +30,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const height = isMobile ? regionNames.length * 250 : regionNames.length * 200;
 
     const radius = isMobile ? 3.5 : 5;
-    const padding = 2.5;
+    const padding = isMobile ? 1.5 : 2.5;
 
     // functions for tooltip 
     var mousemove = function (d) {
