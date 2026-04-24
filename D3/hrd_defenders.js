@@ -80,7 +80,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     var mousemove = function (d) {
         tooltip
-            .html(`In 2025, there were <strong>${d.data.value} confirmed killings</strong> of ${d.data.Category} in ${d.data.name}`);
+            .html(`In 2025, there were <strong>${d.value} confirmed killings</strong> of ${d.Category} in ${d.name}`);
 
         const ttWidth = tooltip.node().offsetWidth;
         const ttHeight = tooltip.node().offsetHeight;
@@ -173,7 +173,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .enter().append("circle")
         .attr("cx", d => x(d.value) + d.__xOffset)
         .attr("cy", 0)
-        .attr("fill", d => color(d.data.name))
+        .attr("fill", d => color(d.name))
         .on("mouseover", mouseover)
         .on("mousemove", mousemove)
         .on("mouseleave", mouseleave)
@@ -228,7 +228,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                 }
 
                 svg.selectAll("circle")
-                    .style("display", d => hidden.has(d.data.name) ? "none" : null);
+                    .style("display", d => hidden.has(d.name) ? "none" : null);
             })
             .on("dblclick", function () {
                 const allOthers = color.domain().filter(n => n !== name);
@@ -248,7 +248,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                 }
 
                 svg.selectAll("circle")
-                    .style("display", d => hidden.has(d.data.name) ? "none" : null);
+                    .style("display", d => hidden.has(d.name) ? "none" : null);
             });
 
         // Color box
@@ -276,7 +276,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                     svg.selectAll("circle")
                         .transition()
                         .duration(500)
-                        .attr("fill", d => scheme(d.data.name));
+                        .attr("fill", d => scheme(d.name));
                 }
             }
         });
