@@ -20,17 +20,17 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     console.log(regionNames);
 
-    // figure variables
-    const width = 800;
+    const isMobile = window.innerWidth <= 991;
+
+    const width = isMobile ? window.innerWidth - 20 : 800;
     const marginRight = 20;
-    const marginLeft = 100;
+    const marginLeft = isMobile ? 60 : 100;
     const marginBottom = 20;
     const marginTop = 40;
-    const height = regionNames.length * 175 + marginTop + marginBottom;
+    const height = isMobile ? regionNames.length * 120 : regionNames.length * 200;
 
-    // Dot size and padding. 
-    const radius = 5;
-    const padding = 1.5;
+    const radius = isMobile ? 3.5 : 5;
+    const padding = 2.5;
 
     // functions for tooltip 
     var mousemove = function (d) {
@@ -94,7 +94,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("width", width)
         .attr("height", height)
         .attr("viewBox", [0, 0, width, height])
-        .attr("style", "max-width: 100%; height: auto; max-height: 80vh");
+        .attr("style", "max-width: 100%; height: auto;");
 
     // adding the x-axis
     svg.append("g")
@@ -102,7 +102,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .call(d3.axisTop(x).ticks(null))
         .call(g => g.selectAll("text")
             .style("font-family", "Roboto")
-            .style("font-size", "16px")
+.style("font-size", isMobile ? "11px" : "16px")
         )
         .call(g => g.append("text")
             .attr("fill", "currentColor")
@@ -121,20 +121,20 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const g = svg.append("g")
         .attr("text-anchor", "end")
         .style("font-family", "Roboto")
-        .style("font-size", "16px")
+.style("font-size", isMobile ? "11px" : "16px")
         .selectAll()
         .data(region)
         .enter().append("g")
         .attr("transform", d => `translate(0,${y(d.key)})`);
 
     g.append("foreignObject")
-        .attr("x", marginLeft - 160)
+        .attr("x", marginLeft - (isMobile ? 55 : 160))
         .attr("y", -8)
-        .attr("width", 140)
+        .attr("width", isMobile ? 50 : 140)
         .attr("height", 40)
         .append("xhtml:div")
         .style("font-family", "Roboto")
-        .style("font-size", "16px")
+        .style("font-size", isMobile ? "11px" : "16px")
         .style("text-align", "right")
         .style("word-wrap", "break-word")
         .text(d => d.key);
@@ -176,7 +176,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     // intersection observer for scroll-based color changes
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
+            if (entry.isIntersecting && window.innerWidth > 991) {
                 const scheme = schemes[entry.target.id];
                 if (scheme) {
                     svg.selectAll("circle")

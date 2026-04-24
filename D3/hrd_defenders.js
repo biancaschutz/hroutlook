@@ -10,13 +10,15 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const names = [...new Set(data.map(d => d.name))];
     const values = data.map(d => +d.value);
 
-    const width = 928;
-    const height = cat.length * 100;
+    const isMobile = window.innerWidth <= 991;
+
+    const width = isMobile ? window.innerWidth - 20 : 928;
     const marginTop = 30;
     const marginRight = 10;
     const marginBottom = 10;
-    const marginLeft = 200;
-    const radius = 7.5;
+    const marginLeft = isMobile ? 120 : 200;
+    const height = cat.length * (isMobile ? 60 : 100);
+    const radius = isMobile ? 4 : 7.5;
     const padding = 3;
 
     const x = d3.scaleLinear()
@@ -29,10 +31,10 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .padding(1);
 
     const color = d3.scaleOrdinal()
-            .domain(['Central Asia and Southern Asia', 'Eastern Asia and South-eastern Asia',
-                'Latin America and the Caribbean', 'Northern America and Europe',
-                'Sub-Saharan Africa', 'Western Asia and Northern Africa'])
-            .range(['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#d55e00', '#cc79a7']);
+        .domain(['Central Asia and Southern Asia', 'Eastern Asia and South-eastern Asia',
+            'Latin America and the Caribbean', 'Northern America and Europe',
+            'Sub-Saharan Africa', 'Western Asia and Northern Africa'])
+        .range(['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#d55e00', '#cc79a7']);
 
     const schemes = {
         "hrd-default": d3.scaleOrdinal()
@@ -100,7 +102,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .call(d3.axisTop(x).ticks(null))
         .call(g => g.selectAll("text")
             .style("font-family", "Roboto")
-            .style("font-size", "16px")
+            .style("font-size", isMobile ? "11px" : "16px")
         )
         .call(g => g.append("text")
             .attr("fill", "currentColor")
@@ -118,7 +120,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const g = svg.append("g")
         .attr("text-anchor", "end")
         .style("font-family", "Roboto")
-        .style("font-size", "16px")
+        .style("font-size", isMobile ? "11px" : "16px")
         .selectAll()
         .data(cat)
         .enter().append("g")
@@ -137,13 +139,13 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("r", radius);
 
     g.append("foreignObject")
-        .attr("x", d => x(d3.min(d.values, v => v.value)) - 156)
+        .attr("x", d => x(d3.min(d.values, v => v.value)) - (isMobile ? 96 : 156))
         .attr("y", -8)
-        .attr("width", 140)
+        .attr("width", isMobile ? 80 : 140)
         .attr("height", 40)
         .append("xhtml:div")
         .style("font-family", "Roboto")
-        .style("font-size", "16px")
+        .style("font-size", isMobile ? "11px" : "16px")
         .style("text-align", "right")
         .style("word-wrap", "break-word")
         .text(d => d.key);
@@ -157,9 +159,9 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .style("display", "flex")
         .style("flex-wrap", "wrap")
         .style("gap", "10px")
-        .style("padding", "10px 25px 10px 100px")
         .style("font-family", "Roboto")
-        .style("font-size", "16px")
+        .style("font-size", isMobile ? "12px" : "16px")
+        .style("padding", isMobile ? "10px" : "10px 25px 10px 100px")
         .style("max-width", `${width}px`);
 
     const hidden = new Set();
@@ -227,7 +229,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     // intersection observer for scroll-based color changes
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
+            if (entry.isIntersecting && window.innerWidth > 991) {
                 const scheme = schemes[entry.target.id];
                 if (scheme) {
                     svg.selectAll("circle")
