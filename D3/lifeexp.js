@@ -21,16 +21,16 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     console.log(regionNames);
 
     // figure variables
-    const width = 928;
+    const width = 800;
     const marginRight = 20;
     const marginLeft = 100;
     const marginBottom = 20;
     const marginTop = 40;
-    const height = regionNames.length * 200;
+    const height = regionNames.length * 175 + marginTop + marginBottom;
 
     // Dot size and padding. 
     const radius = 5;
-    const padding = 2.5;
+    const padding = 1.5;
 
     // functions for tooltip 
     var mousemove = function (d) {
@@ -94,7 +94,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("width", width)
         .attr("height", height)
         .attr("viewBox", [0, 0, width, height])
-        .attr("style", "max-width: 100%; height: auto;");
+        .attr("style", "max-width: 100%; height: auto; max-height: 80vh");
 
     // adding the x-axis
     svg.append("g")
