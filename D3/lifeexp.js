@@ -27,7 +27,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const marginLeft = isMobile ? 60 : 100;
     const marginBottom = 20;
     const marginTop = 40;
-    const height = isMobile ? regionNames.length * 120 : regionNames.length * 200;
+    const height = regionNames.length * 200;
 
     const radius = isMobile ? 3.5 : 5;
     const padding = 2.5;
