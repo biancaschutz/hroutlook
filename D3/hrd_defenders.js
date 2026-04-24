@@ -159,10 +159,20 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     g.append("g")
         .selectAll("circle")
-        .data(d => dodge(d.values, { radius: radius * 2 + padding, x: v => x(v.value) }))
+        .data(d => {
+            // Group values by their x-position, then assign alternating offsets
+            const byValue = d3.nest().key(v => v.value).entries(d.values);
+            byValue.forEach(group => {
+                group.values.forEach((v, i) => {
+                    const half = (group.values.length - 1) / 2;
+                    v.__xOffset = (i - half) * (radius * 2 + padding);
+                });
+            });
+            return d.values;
+        })
         .enter().append("circle")
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y)
+        .attr("cx", d => x(d.value) + d.__xOffset)
+        .attr("cy", 0)
         .attr("fill", d => color(d.data.name))
         .on("mouseover", mouseover)
         .on("mousemove", mousemove)
