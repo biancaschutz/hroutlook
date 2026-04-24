@@ -172,7 +172,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     document.getElementById("chart-container-lifeexp").appendChild(svg.node());
 
     // legend
-    const legend = d3.select("#legend-container-lifeexp")
+    const legend = d3.select("#legend-container-hrd")
         .append("div")
         .style("box-sizing", "border-box")
         .style("display", "flex")
@@ -206,7 +206,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                 }
 
                 svg.selectAll("circle")
-                    .style("display", d => hidden.has(d.data["Region Name"]) ? "none" : null);
+                    .style("display", d => hidden.has(d.data.name) ? "none" : null);
             })
             .on("dblclick", function () {
                 const allOthers = color.domain().filter(n => n !== name);
@@ -226,7 +226,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                 }
 
                 svg.selectAll("circle")
-                    .style("display", d => hidden.has(d.data["Region Name"]) ? "none" : null);
+                    .style("display", d => hidden.has(d.data.name) ? "none" : null);
             });
 
         // Color box
@@ -245,16 +245,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
 
 
-    let pinnedTooltip = false;
-
-    // maps each scroll section to a specific country to highlight
-    const scrollHighlights = {
-        "lifeexp_default": null,
-        "lifeexp_africa": "Lesotho",
-        "lifeexp_higher": "Japan",
-        "lifeexp_europe": "Switzerland"
-    };
-
+    // intersection observer for scroll-based color changes
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -263,48 +254,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                     svg.selectAll("circle")
                         .transition()
                         .duration(500)
-                        .attr("fill", d => scheme(d.data["Region Name"]));
-                }
-
-                // find the target country for this section
-                const targetCountry = scrollHighlights[entry.target.id];
-
-                if (targetCountry) {
-                    // find the dot's data point
-                    const targetDot = svg.selectAll("circle")
-                        .filter(d => d.data.Location === targetCountry);
-
-                    if (!targetDot.empty()) {
-                        const dotData = targetDot.datum();
-
-                        pinnedTooltip = true;
-
-                        tooltip
-                            .html(`In 2021, ${dotData.data.Location} had a life expectancy of ${dotData.data.FactValueNumeric} at birth.`)
-                            .style("opacity", 1)
-                            .style("left", (dotData.x + 160) + "px")   // position near the dot
-                            .style("top", (dotData.y + 80) + "px");
-
-                        // optionally enlarge the dot to draw attention
-                        targetDot
-                            .raise()  // bring to front
-                            .transition().duration(300)
-                            .attr("r", radius * 2);
-
-                        // shrink all other dots back
-                        svg.selectAll("circle")
-                            .filter(d => d.data.Location !== targetCountry)
-                            .transition().duration(300)
-                            .attr("r", radius);
-                    }
-                } else {
-                    // reset all dots to normal size when no highlight
-                    svg.selectAll("circle")
-                        .transition().duration(300)
-                        .attr("r", radius);
-                    if (!pinnedTooltip) {
-                        tooltip.style("opacity", 0);
-                    }
+                        .attr("fill", d => scheme(d.data.name));
                 }
             }
         });
