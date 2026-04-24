@@ -37,8 +37,39 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         const ttWidth = tooltip.node().offsetWidth;
         tooltip
             .html(`In 2021, ${d.data.Location} had a life expectancy of ${d.data.FactValueNumeric.toFixed(0)} years at birth.`)
-            .style("left", (d3.event.clientX - ttWidth - 15) + "px")
-            .style("top", (d3.event.clientY - 28) + "px");
+
+        const ttWidth = tooltip.node().offsetWidth;
+        const ttHeight = tooltip.node().offsetHeight;
+        const mouseX = d3.event.clientX;
+        const mouseY = d3.event.clientY;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // horizontal: prefer left, flip right if not enough room
+        let left;
+        if (mouseX - ttWidth - 15 < 0) {
+            // not enough room on left, go right
+            left = mouseX + 15;
+        } else {
+            left = mouseX - ttWidth - 15;
+        }
+
+        // if going right would also overflow, clamp to viewport edge with padding
+        if (left + ttWidth > vw) {
+            left = vw - ttWidth - 10;
+        }
+
+        // vertical: flip up if tooltip would go below viewport
+        let top;
+        if (mouseY - 28 + ttHeight > vh) {
+            top = mouseY - ttHeight - 10;
+        } else {
+            top = mouseY - 28;
+        }
+
+        tooltip
+            .style("left", left + "px")
+            .style("top", top + "px");
     }
     var mouseover = function (d) {
         pinnedTooltip = false;
@@ -102,7 +133,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .call(d3.axisTop(x).ticks(null))
         .call(g => g.selectAll("text")
             .style("font-family", "Roboto")
-.style("font-size", isMobile ? "11px" : "16px")
+            .style("font-size", isMobile ? "11px" : "16px")
         )
         .call(g => g.append("text")
             .attr("fill", "currentColor")
@@ -121,7 +152,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
     const g = svg.append("g")
         .attr("text-anchor", "end")
         .style("font-family", "Roboto")
-.style("font-size", isMobile ? "11px" : "16px")
+        .style("font-size", isMobile ? "11px" : "16px")
         .selectAll()
         .data(region)
         .enter().append("g")

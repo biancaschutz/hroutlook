@@ -80,9 +80,40 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     var mousemove = function (d) {
         tooltip
-            .html(`In 2025, there were <strong>${d.data.value} confirmed killings</strong> of ${d.data.Category} in ${d.data.name}`)
-            .style("left", (d3.event.clientX + 15) + "px")  // clientX pairs with fixed positioning
-            .style("top", (d3.event.clientY - 28) + "px");
+            .html(`In 2025, there were <strong>${d.data.value} confirmed killings</strong> of ${d.data.Category} in ${d.data.name}`);
+
+        const ttWidth = tooltip.node().offsetWidth;
+        const ttHeight = tooltip.node().offsetHeight;
+        const mouseX = d3.event.clientX;
+        const mouseY = d3.event.clientY;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // horizontal: prefer left, flip right if not enough room
+        let left;
+        if (mouseX - ttWidth - 15 < 0) {
+            // not enough room on left, go right
+            left = mouseX + 15;
+        } else {
+            left = mouseX - ttWidth - 15;
+        }
+
+        // if going right would also overflow, clamp to viewport edge with padding
+        if (left + ttWidth > vw) {
+            left = vw - ttWidth - 10;
+        }
+
+        // vertical: flip up if tooltip would go below viewport
+        let top;
+        if (mouseY - 28 + ttHeight > vh) {
+            top = mouseY - ttHeight - 10;
+        } else {
+            top = mouseY - 28;
+        }
+
+        tooltip
+            .style("left", left + "px")
+            .style("top", top + "px");
     }
     var mouseover = function (d) {
         tooltip.transition()
