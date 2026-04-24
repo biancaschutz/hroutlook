@@ -309,4 +309,9 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             }
         });
     }, { threshold: 0.5 });
+
+        ["lifeexp-default", "lifeexp-africa", "lifeexp-higher", "lifeexp-europe"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+    });
 });
