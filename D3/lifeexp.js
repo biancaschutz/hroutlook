@@ -182,7 +182,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
                     svg.selectAll("circle")
                         .transition()
                         .duration(500)
-                        .attr("fill", d => scheme(d.data.name));
+                        .attr("fill", d => scheme(d.data["Region Name"]));
                 }
             }
         });
