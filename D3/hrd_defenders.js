@@ -180,7 +180,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
         .attr("r", radius);
 
     g.append("foreignObject")
-        .attr("x", 0 - (isMobile ? 5 : 10))
+        .attr("x", 0)
         .attr("y", -8)
         .attr("width", isMobile ? 80 : 140)
         .attr("height", 40)
