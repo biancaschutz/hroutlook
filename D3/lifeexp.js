@@ -127,10 +127,7 @@ const svg = d3.select("#chart-container-lifeexp").append("svg")
     .attr("width", width)
     .attr("height", naturalHeight)
     .attr("viewBox", [0, 0, width, naturalHeight])
-    .attr("preserveAspectRatio", "xMidYMid meet")
-    .style("width", "100%")
-    .style("height", "auto")  
-    .style("display", "block");
+    .attr("preserveAspectRatio", "xMidYMid meet");
 
     // adding the x-axis
     svg.append("g")
