@@ -123,7 +123,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
 const naturalHeight = regionNames.length * 200;
 
-const svg = d3.select("body").append("svg")
+const svg = d3.select("#chart-container-lifeexp").append("svg")
     .attr("width", width)
     .attr("height", naturalHeight)
     .attr("viewBox", [0, 0, width, naturalHeight])
@@ -204,10 +204,6 @@ const svg = d3.select("body").append("svg")
         .style("word-wrap", "break-word")
         .style("max-width", "200px")
         .style("z-index", "99999");
-
-
-    document.getElementById("chart-container-lifeexp").appendChild(svg.node());
-
 
     // intersection observer for scroll-based color changes
     const observer = new IntersectionObserver((entries) => {
