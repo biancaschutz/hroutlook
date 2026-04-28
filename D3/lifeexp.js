@@ -129,7 +129,7 @@ const svg = d3.select("body").append("svg")
     .attr("viewBox", [0, 0, width, naturalHeight])
     .attr("preserveAspectRatio", "xMidYMid meet")
     .style("width", "100%")
-    .style("height", "100%")
+    .style("height", "auto")  
     .style("display", "block");
 
     // adding the x-axis
