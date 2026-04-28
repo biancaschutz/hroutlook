@@ -121,11 +121,16 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
             .range(['#ccc', '#ccc', '#ccc', '#b95380', '#ccc']),
     };
 
-    const svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("viewBox", [0, 0, width, height])
-        .attr("style", "max-width: 100%; height: auto; max-height: 100vh;");
+const naturalHeight = regionNames.length * 200;
+
+const svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", naturalHeight)
+    .attr("viewBox", [0, 0, width, naturalHeight])
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("width", "100%")
+    .style("height", "100%")
+    .style("display", "block");
 
     // adding the x-axis
     svg.append("g")
