@@ -101,12 +101,12 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
     const color = d3.scaleOrdinal()
         .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
-        .range(['#81ac31', '#16b5c5', '#f78e1e', '#b95380', '#8a69a1']);
+        .range(['#81ac31', '#16b5c5', '#ffd331', '#b95380', '#8a69a1']);
 
     const schemes = {
         "lifeexp-default": d3.scaleOrdinal()
             .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
-            .range(['#81ac31', '#16b5c5', '#f78e1e', '#b95380', '#8a69a1']),
+            .range(['#81ac31', '#16b5c5', '#ffd331', '#b95380', '#8a69a1']),
 
         "lifeexp-africa": d3.scaleOrdinal()
             .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
@@ -114,7 +114,7 @@ d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main
 
         "lifeexp-higher": d3.scaleOrdinal()
             .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
-            .range(['#ccc', '#16b5c5', '#f78e1e', '#b95380', '#ccc']),
+            .range(['#ccc', '#16b5c5', '#ffd331', '#b95380', '#ccc']),
 
         "lifeexp-europe": d3.scaleOrdinal()
             .domain(['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'])
