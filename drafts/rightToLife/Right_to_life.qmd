@@ -1,0 +1,513 @@
+---
+title: "Right to life"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+  out-width: 100%
+---
+
+```{r setup}
+#| echo: false
+library(tidyverse)
+library(cowplot)
+library(rvest)
+library(ggbeeswarm)
+library(scales)
+library(httr)
+library(jsonlite)
+library(ggrepel)
+library(readxl)
+library(ggmosaic)
+library(here)
+
+source(here("consts.R"))
+
+dir.create(here("drafts/rightToLife/datasets"), recursive = TRUE, showWarnings = FALSE)
+path <- here("drafts/rightToLife/datasets/")
+raw <- here("data/raw/")
+```
+
+# Human Rights Defenders
+
+```{r global-hrd-deaths}
+world <- c(426, 423, 416, 487, 437, 387, 401, 500, 595, 685, 743)
+years <- 2015:2025
+
+hrds_annual_export <- data.frame(world, years)
+
+hrds_annual_export %>%
+    write.csv(paste0(path, "/hr_defenders_killed_globally.csv"), row.names = FALSE)
+
+hrds_annual_export %>%
+    ggplot(aes(x = years, y = world)) +
+    geom_col(fill = orange) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(x = "Year", y = "Number of human rights defenders killed annually") +
+    theme_minimal_hgrid()
+```
+
+```{r regional-hrd-beeswarm}
+#| fig-height: 7
+cols <- c("Category", "x", "Central Asia and Southern Asia", "Eastern Asia and South-eastern Asia", "Latin America and the Caribbean", "Northern America and Europe", "Sub-Saharan Africa", "Western Asia and Northern Africa", "World", "Min", "Max", "start", "end")
+
+wide <- read_csv(I("Women HRDs,1,12%,19%,16%,19%,7%,11%,14%,7%,19%,7%,12%
+Environment & land HRDs,2,12%,25%,52%,6%,19%,1%,31%,1%,52%,1%,51%
+Indigenous & minority HRDs,3,18%,14%,45%,13%,18%,13%,29%,13%,45%,13%,32%
+Youth HRDs,4,8%,6%,10%,31%,10%,13%,10%,6%,31%,6%,25%"),
+    col_names = cols
+) %>%
+    select(-x, -World, -Min, -Max, -start, -end) %>%
+    mutate(across(!Category, ~ as.numeric(str_extract(., "[0-9]*"))))
+
+hrds_category_export <- wide %>%
+    pivot_longer(-Category) %>%
+    mutate(
+        Category = factor(Category),
+        cat = as.numeric(Category)
+    )
+
+hrds_category_export %>%
+    write.csv(paste0(path, "/hr_defenders_regional_category.csv"), row.names = FALSE)
+
+hrds_category_export %>%
+    ggplot(aes(x = str_wrap(as.character(Category), 20), y = value / 100, color = name)) +
+    geom_beeswarm(method = "center", cex = 2, size = 3) +
+    scale_color_manual(values = palettes$cats) +
+    labs(x = "Category", y = "Percentage of total killed or disappeared", color = "Region") +
+    scale_y_continuous(
+        expand = c(0, 0),
+        limits = c(0, .55),
+        labels = label_percent()
+    ) +
+    theme_minimal_hgrid() +
+    theme(legend.position = "bottom") +
+    guides(color = guide_legend(nrow = 3, byrow = TRUE))
+```
+
+# Conflict-related deaths
+
+```{r global-crds}
+crd_files <- list.files(paste0(raw, "/crd"))
+
+l <- list()
+
+for (f in crd_files) {
+    l[[str_remove(f, ".rds")]] <- readRDS(paste0(raw, "/crd/", f))
+}
+
+crds_total_export <- l$series_total_w
+
+crds_total_export %>% write.csv(paste0(path, "/global_crds_annual.csv"), row.names = FALSE)
+
+crds_total_export %>%
+    ggplot(aes(x = as.factor(year), y = deaths_OHCHR)) +
+    geom_line(color = orange, group = 1) +
+    scale_y_continuous(
+        limits = c(0, max(crds_total_export$deaths_OHCHR)),
+        expand = c(0, 0),
+        labels = label_comma()
+    ) +
+    labs(x = "Year", y = "Number of global conflict-related deaths") +
+    theme_minimal_grid()
+```
+
+# Life expectancy
+
+```{r regional-lifeexp}
+library(rvest)
+lifeexp <- read.csv(paste0(raw, "/lifeexp_who.csv"))
+
+page <- read_html("https://unstats.un.org/unsd/methodology/m49/overview/")
+t <- html_element(page, "table")
+unregions <- html_table(t, header = TRUE) %>% select(`Region Name`, `M49 Code`, `Sub-region Name`, `ISO-alpha3 Code`, `Country or Area`)
+
+lifeexp_export <- lifeexp %>%
+    left_join(unregions, by = c("SpatialDimValueCode" = "ISO-alpha3 Code")) %>%
+    filter(Period == 2021, Dim1ValueCode == "SEX_BTSX", Indicator == "Life expectancy at birth (years)") %>%
+    select(Location, FactValueNumeric, `Region Name`)
+
+write.csv(lifeexp_export, paste0(path, "/life_expectancy_beeswarm.csv"), row.names = FALSE)
+
+lifeexp_export %>%
+    ggplot(aes(x = FactValueNumeric, y = `Region Name`, color = `Region Name`)) +
+    geom_beeswarm(cex = 2) +
+    scale_color_manual(values = palettes$regions, guide = "none") +
+    scale_x_continuous(expand = c(0, 0), limits = c(50, 85)) +
+    theme_minimal_vgrid() +
+    labs(color = "Region", y = NULL, x = "Life expectancy at birth")
+```
+
+# Homicides
+
+```{r homicide-range}
+body <- list(
+    limit = 1000,
+    where = list(
+        datetime = c("2000-01-01", "2024-01-01"),
+        sexCode = "_T"
+    )
+)
+
+response <- POST(
+    url = "https://hrdx-api-staging.un.org/vcIhrPsrc/search",
+    body = toJSON(body, auto_unbox = TRUE),
+    content_type_json()
+)
+
+homicide_per_100k <- fromJSON(content(response, "text"), flatten = TRUE)$results
+
+body <- list(
+    limit = 1000
+)
+
+response <- POST(
+    url = "https://hrdx-api-staging.un.org/region/search",
+    body = toJSON(body, auto_unbox = TRUE),
+    content_type_json()
+)
+
+all_regions <- fromJSON(content(response, "text"), flatten = TRUE)$results %>% select(id, name, level, parentId)
+
+regions <- fromJSON(content(response, "text"), flatten = TRUE)$results %>%
+    select(id, name, level) %>%
+    filter(level %in% 0:1)
+
+homicide_per_100k_export <- homicide_per_100k %>%
+    left_join(regions, by = c("regionId" = "id")) %>%
+    filter(!is.na(name)) %>%
+    mutate(
+        year = year(datetime),
+        highlight = ifelse(name == "World", "Y", "N")
+    ) %>%
+    select(name, year, value, highlight)
+
+homicide_per_100k_export %>%
+    pivot_wider(names_from = year, values_from = value) %>%
+    mutate(incdec = ifelse(`2024` - `2000` > 0, "increased", "decreased")) %>%
+    write.csv(paste0(path, "/homicide_100k_range.csv"), row.names = FALSE)
+
+label_2000 <- homicide_per_100k_export %>%
+    filter(year == 2000) %>%
+    mutate(label_x = 1999)
+
+label_2023 <- homicide_per_100k_export %>%
+    filter(year == 2024) %>%
+    mutate(label_x = 2025)
+
+label_data <- data.frame(x = c(2000, 2024), label = c(2000, 2024), y = 0)
+
+ggplot(homicide_per_100k_export, aes(x = year, y = round(value, 1), group = name)) +
+    geom_line(aes(color = highlight, alpha = highlight)) +
+    scale_alpha_manual(values = c("Y" = 1, "N" = .9)) +
+    geom_text_repel(
+        data = label_2000,
+        aes(x = label_x, y = value, label = paste0(name, "\n", value), color = highlight),
+        direction = "y",
+        hjust = 1,
+        segment.color = NA,
+        xlim = c(-Inf, 1999.75),
+        lineheight = 0.8,
+        size = 3
+    ) +
+    geom_text_repel(
+        data = label_2023,
+        aes(x = label_x, y = value, label = paste0(name, "\n", value), color = highlight),
+        direction = "y",
+        hjust = 0,
+        segment.color = NA,
+        xlim = c(2023.25, Inf),
+        lineheight = 0.8,
+        size = 3
+    ) +
+    geom_segment(aes(x = 2000, xend = 2000, y = .5, yend = 16), inherit.aes = FALSE) +
+    geom_segment(aes(x = 2024, xend = 2024, y = .5, yend = 16), inherit.aes = FALSE) +
+    geom_point(aes(color = highlight)) +
+    scale_color_manual(values = palettes$highlight) +
+    scale_x_continuous(expand = expansion(mult = c(0.3, 0.3))) +
+    geom_text(data = label_data, aes(x = x, y = y, label = label), inherit.aes = FALSE) +
+    theme_void() +
+    guides(color = "none", label = "none", alpha = "none")
+```
+
+```{r homicide-snapshot}
+body <- list(
+    limit = 1000,
+    where = list(
+        sexCode = "_T",
+        datetime = "2024-01-01"
+    )
+)
+
+response <- POST(
+    url = "https://hrdx-api-staging.un.org/vcIhrPsrcn/search",
+    body = toJSON(body, auto_unbox = TRUE),
+    content_type_json()
+)
+
+homicide_n_export <- fromJSON(content(response, "text"), flatten = TRUE)$results %>%
+    mutate(
+        countryId = as.integer(countryId),
+        year = year(datetime)
+    ) %>%
+    left_join(unregions, by = c("countryId" = "M49 Code")) %>%
+    group_by(`Region Name`) %>%
+    summarize(total = sum(value), .groups = "drop") %>%
+    mutate(
+        value = total / sum(total) * 100,
+        n = n()
+    )
+
+homicide_n_export %>%
+    write.csv(paste0(path, "/homicide_n_2024.csv"), row.names = FALSE)
+
+homicide_n_export %>%
+    arrange(total) %>%
+    mutate(
+        csum = rev(cumsum(rev(value))),
+        pos = value / 2 + lead(csum, 1),
+        pos = if_else(is.na(pos), value / 2, pos)
+    ) %>%
+    ggplot(aes(x = "", y = value, fill = fct_inorder(`Region Name`))) +
+    geom_col(width = 1, color = 1) +
+    coord_polar(theta = "y") +
+    scale_fill_manual(values = palettes$regions, guide = "none") +
+    geom_text_repel(
+        aes(y = pos, label = paste0(`Region Name`, "\n", total, " homicides")),
+        size = 4.5, nudge_x = .8, show.legend = FALSE
+    ) +
+    theme_void()
+```
+
+```{r homicide-sex-scatter}
+#| fig-height: 5
+body <- list(
+    limit = 1000,
+    where = list(
+        datetime = c("2024-01-01"),
+        sexCode = c("M", "F")
+    )
+)
+
+response <- POST(
+    url = "https://hrdx-api-staging.un.org/vcIhrPsrc/search",
+    body = toJSON(body, auto_unbox = TRUE),
+    content_type_json()
+)
+
+homicides_sex <- fromJSON(content(response, "text"), flatten = TRUE)$results
+
+homicides_sex_export <- homicides_sex %>%
+    mutate(
+        countryId = as.integer(countryId),
+        year = year(datetime)
+    ) %>%
+    filter(year == 2024, !is.na(countryId)) %>%
+    left_join(unregions, by = c("countryId" = "M49 Code")) %>%
+    select(`Country or Area`, `Region Name`, value, year, sexCode) %>%
+    pivot_wider(names_from = sexCode, values_from = value)
+
+homicides_sex_export %>%
+    write.csv(paste0(path, "/homicides_sex.csv"), row.names = FALSE)
+
+homicides_sex_export %>%
+    ggplot(aes(x = M, y = F)) +
+    geom_point(aes(color = `Region Name`)) +
+    scale_color_manual(values = palettes$region) +
+    theme_minimal_grid(12) +
+    labs(x = "Intentional homicides of men, per 100,000 population", y = "Intentional homicides of women, per 100,000 population") +
+    scale_x_continuous(expand = c(.02, 0)) +
+    scale_y_continuous(expand = c(.02, 0))
+```
+
+Data obtained at UNODC: <https://data.unodc.org/datareport/hom-victim>
+
+```{r ipv}
+#| fig-height: 6
+# obtained here: https://data.unodc.org/datareport/hom-victim
+homicides_unodc <- read_excel(paste0(raw, "/unodc_homicide.xlsx"), skip = 2)
+
+homicides_ipv_export <- homicides_unodc %>%
+    filter(
+        Dimension == "by relationship to perpetrator",
+        `Unit of measurement` == "Rate per 100,000 population",
+        Sex %in% c("Male", "Female"),
+        Year == 2022,
+        Category %in% c(
+            "Perpetrator unknown to the victim",
+            "Intimate partner or family member: Intimate partner",
+            "Intimate partner or family member: Family member"
+        )
+    ) %>%
+    group_by(Sex, Category) %>%
+    summarize(value = mean(VALUE)) %>%
+    pivot_wider(names_from = Sex, values_from = value) %>%
+    mutate(
+        diff = Female - Male,
+        sign = ifelse(diff > 0, "Female", "Male"),
+        Category = str_to_lower(str_remove(Category, "Intimate partner or family member: |Perpetrator "))
+    )
+
+homicides_ipv_export %>%
+    write.csv(paste0(path, "/homicides_ipv.csv"), row.names = FALSE)
+
+homicides_ipv_export %>%
+    ggplot(aes(x = Category, y = diff, fill = sign)) +
+    geom_col() +
+    scale_fill_manual(values = palettes$gender, guide = "none") +
+    labs(x = "Relationship to victim", y = "Difference in rate of intentional homicide, Female - Male") +
+    geom_hline(yintercept = 0) +
+    theme_minimal_hgrid()
+```
+
+# Maternal mortality
+
+The MMR rose in 2021 (from 282 000 maternal deaths in 2020 to 322 000 maternal deaths in 2021). It is possible that the COVID-19 pandemic contributed to this via two mechanisms: (i) indirect obstetric deaths – where the woman had SARS-CoV-2 infection and died as a result of the interaction between COVID-19 and her pregnant state; and/or (ii) direct obstetric deaths – where disruptions to health services hindered access to and/or quality of care resulting in pregnancy complications that ended in mortality, when they may otherwise have been prevented or managed successfully (*4)*. The data show that this interruption to the downward trajectory of global MMR was short-lived. In 2022, the global MMR and number of maternal deaths were lower than they had been in the three years immediately prior to the COVID-19 pandemic. 
+
+<https://www.who.int/news-room/fact-sheets/detail/maternal-mortality>
+
+```{r maternal-mort}
+body <- list(
+    limit = 1000,
+    where = list("regionId" = c(19, 2, 9, 142, 150))
+)
+
+response <- POST(
+    url = "https://hrdx-api-staging.un.org/shStaMort/search",
+    body = toJSON(body, auto_unbox = TRUE),
+    content_type_json()
+)
+
+maternal_mort_export <- fromJSON(content(response, "text"), flatten = TRUE)$results %>%
+    inner_join(regions, by = c("regionId" = "id")) %>%
+    mutate(year = year(datetime)) %>%
+    select(year, name, value)
+
+maternal_mort_export %>%
+    ggplot(aes(x = year, y = value, color = name)) +
+    geom_line() +
+    scale_color_manual(values = palettes$regions) +
+    theme_minimal_grid() +
+    labs(y = "Number of maternal deaths per 100,000 live births", x = "Year", color = "Region") +
+    geom_vline(xintercept = 2021, linetype = "dashed") +
+    geom_text(x = 2016, y = 650, label = "COVID-19 pandemic", color = "black")
+```
+
+# Under-5 mortality rate
+
+```{r under-5}
+body <- list(
+    limit = 1000,
+    where = list(
+        "datetime" = "2024-01-01",
+        "sexCode" = "_T"
+    )
+)
+
+response <- POST(
+    url = "https://hrdx-api-staging.un.org/shDynMort/search",
+    body = toJSON(body, auto_unbox = TRUE),
+    content_type_json()
+)
+
+under5_mort_export <- fromJSON(content(response, "text"), flatten = TRUE)$results %>%
+    filter(!is.na(regionId)) %>%
+    left_join(all_regions, by = c("regionId" = "id")) %>%
+    mutate(parentId = ifelse(level == 1, regionId, parentId)) %>%
+    filter(name != "Australia and New Zealand") %>%
+    select(-name, -level) %>%
+    left_join(all_regions, by = c("parentId" = "id")) %>%
+    group_by(name) %>%
+    summarize(mean_regional = mean(value))
+
+under5_mort_export %>%
+    write.csv(paste0(path, "/under5-mortalities2024.csv"), row.names = FALSE)
+
+under5_mort_export %>%
+    ggplot(aes(x = fct_reorder(name, -mean_regional), y = mean_regional)) +
+    geom_col(fill = orange) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(x = NULL, y = "probability of a child dying before\nreaching age 5, per 1,000 live births") +
+    theme_minimal_hgrid()
+```
+
+# Second Optional Protocol
+
+Data downloaded from <https://indicators.ohchr.org/>
+
+```{r op2}
+op2 <- read_excel(paste0(raw, "/op2.xls"), skip = 1)
+
+pal <- c("Ratified" = "#faa31b", "Not ratified" = "#cccccc")
+
+
+# op2_export <- op2 %>%
+# mutate(rat = ifelse(!is.na(`Date of Ratification/Accession`), T, F),
+#        country_cleaned = case_when(Country == "Netherlands" ~ "Netherlands (Kingdom of the)",
+#                                    Country == "Côte d'Ivoire" ~ "Côte d’Ivoire",
+#                                    Country == "Czech Republic" ~ "Czechia",
+#                                   .default = Country)
+#       ) %>%
+#     left_join(unregions, by = c("country_cleaned" = "Country or Area")) %>%
+#     filter(!is.na(`M49 Code`)) %>%
+# group_by(`Region Name`) %>%
+# summarize(Ratified = sum(rat)/n(),
+#           `Not ratified` = 1 - Ratified) %>%
+# pivot_longer(cols = c(Ratified, `Not ratified`))
+
+# op2_export %>%
+# write.csv(paste0(path, "/op2_pct.csv"), row.names = FALSE)
+
+# op2_export %>%
+#   ggplot(aes(x = fct_reorder(`Region Name`, value * (name == "Ratified")), y = value)) +
+#   geom_col(aes(fill = name)) +
+# scale_fill_manual(values = pal) +
+# labs(fill = "Ratified OP2", y = "% of countries in region", x = NULL) +
+# scale_y_continuous(expand = c(0, 0)) +
+# theme_minimal_hgrid()
+
+# OR
+
+op2_export2 <- op2 %>%
+    mutate(
+        rat = ifelse(!is.na(`Date of Ratification/Accession`), T, F),
+        country_cleaned = case_when(Country == "Netherlands" ~ "Netherlands (Kingdom of the)",
+            Country == "Côte d'Ivoire" ~ "Côte d’Ivoire",
+            Country == "Czech Republic" ~ "Czechia",
+            .default = Country
+        )
+    ) %>%
+    left_join(unregions, by = c("country_cleaned" = "Country or Area")) %>%
+    filter(!is.na(`M49 Code`)) %>%
+    group_by(`Region Name`) %>%
+    summarize(
+        Ratified = sum(rat),
+        `Not ratified` = sum(!rat)
+    ) %>%
+    pivot_longer(cols = c(Ratified, `Not ratified`)) %>%
+    rename(region = `Region Name`) %>%
+    group_by(region) %>%
+    mutate(pct_rat = value[name == "Ratified"] / sum(value)) %>%
+    ungroup() %>%
+    mutate(
+        region = fct_reorder(region, pct_rat),
+        name = fct_rev(name)
+    )
+
+op2_export2 %>%
+    write.csv(paste0(path, "/op2_mosaic.csv"), row.names = FALSE)
+
+op2_export2 %>%
+    ggplot() +
+    geom_mosaic(aes(x = product(name, region), fill = name, weight = value)) +
+    scale_fill_manual(values = pal, guide = "none") +
+    theme_void() +
+    theme(axis.text = element_text()) +
+    coord_flip() +
+    scale_x_productlist(expand = c(0, 0)) +
+    scale_y_productlist(expand = c(0, 0))
+```
