@@ -1,0 +1,403 @@
+---
+title: "Right to non-discrimination"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+  out-width: 100%
+---
+
+```{r setup}
+#| echo: false
+library(waffle)
+library(magrittr)
+library(showtext)
+library(hrbrthemes)
+library(tidyverse)
+library(waffle)
+library(tidyverse)
+library(cowplot)
+library(rvest)
+library(ggbeeswarm)
+library(scales)
+library(ggtext)
+library(httr)
+library(jsonlite)
+library(ggrepel)
+library(readxl)
+library(ggmosaic)
+library(here)
+source(here("consts.R"))
+
+dir.create(here("drafts/rightToNondiscrimination/datasets"), recursive = TRUE, showWarnings = FALSE)
+path <- here("drafts/rightToNondiscrimination/datasets/")
+raw <- here("data/raw/")
+
+perceptions <- read.csv(paste0(raw, "/expofdisc2026.csv")) %>%
+    select(-starts_with("X"))
+```
+
+```{r}
+font_add(
+    family = "FontAwesome5Free-Solid",
+    regular = system.file("fonts", "fa-solid-900.ttf", package = "waffle")
+)
+showtext_auto()
+
+perceptions %>%
+    filter(Type == "Global") %>%
+    mutate(experienced.discrimination = round(Value)) %>%
+    select(experienced.discrimination) %>%
+    mutate(didnt.experience.discrimination = 100 - experienced.discrimination) %>%
+    pivot_longer(everything()) %>%
+    mutate(value = value / 20) %>%
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 35
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "experienced.discrimination" = "user",
+            "didnt.experience.discrimination" = "user"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "experienced.discrimination" = "#faa31b",
+            "didnt.experience.discrimination" = "#f5f5f1"
+        )
+    ) +
+    coord_equal() +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.75, 2))
+```
+
+```{r}
+#| fig-width: 8
+#| fig-height: 3
+perceptions %>%
+    group_by(TimePeriod) %>%
+    distinct(GeoAreaName) %>%
+    count() %>%
+    ggplot(aes(x = TimePeriod, y = n)) +
+    geom_line() +
+    labs(x = "Year", y = "Number of countries providing data") +
+    theme_minimal_grid()
+```
+
+```{r}
+# by sex
+perceptions %>%
+    filter(Sex != "BOTHSEX", Grounds.of.discrimination == "ALL", Age == "ALLAGE", Disability.status == "_T", Location == "ALLAREA", Education == "_T", Income == "_T") %>%
+    mutate(sexCode = case_when(Sex == "FEMALE" ~ "F", .default = "M")) %>%
+    group_by(TimePeriod, sexCode) %>%
+    summarize(Value = mean(Value), n = n()) %>%
+    ggplot(aes(x = as.factor(TimePeriod), y = Value)) +
+    geom_line(aes(group = TimePeriod), linewidth = .25) +
+    geom_point(aes(color = sexCode), size = 2.5) +
+    scale_color_ghro("gender") +
+    scale_y_continuous(limits = c(10, 29), expand = c(0, 0)) +
+    theme_minimal_grid() +
+    theme(legend.position = "top",       legend.box.spacing = unit(0, "pt"))  + 
+    labs(x = NULL, y = "% of population")
+
+    ggsave(here("drafts/rightToNondiscrimination/gender_discrim_ts.jpg"), width = 3, height = 2)
+```
+
+```{r}
+perceptions |> 
+filter(Sex != "BOTHSEX", Grounds.of.discrimination == "ALL", Age == "ALLAGE", Disability.status == "_T", Location == "ALLAREA", Education == "_T", Income == "_T", TimePeriod > 2022) |> group_by(TimePeriod, Sex) |> summarize(n = n(), m = mean(Value), countries = paste(GeoAreaName, collapse = ", "))
+
+perceptions |> 
+filter(Sex == "BOTHSEX", Grounds.of.discrimination == "ALL", Age == "ALLAGE", Disability.status != "_T", Location == "ALLAREA", Education == "_T", Income == "_T", TimePeriod > 2023) |> group_by(TimePeriod, Disability.status) |> summarize(n = n(), m = mean(Value), countries = paste(GeoAreaName, collapse = ", "))
+```
+
+```{r}
+discrim_gender <- data.frame(name = c("experienced.discrimination", "didnt.experience.discrimination"), value = c(1, 3))
+
+discrim_gender |> 
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 65
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "experienced.discrimination" = "female",
+            "didnt.experience.discrimination" = "female"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "experienced.discrimination" = palettes$gender[["F"]],
+            "didnt.experience.discrimination" = "#f5f5f1"
+        )
+    ) +
+    coord_equal() +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.9, 1.5))
+
+    ggsave(here("drafts/rightToNondiscrimination/fem.png"), width = 6, height = 1)
+
+
+discrim_pd <- data.frame(name = c("experienced.discrimination", "didnt.experience.discrimination"), value = c(3, 10))
+
+discrim_pd |> 
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 30
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "experienced.discrimination" = "wheelchair",
+            "didnt.experience.discrimination" = "wheelchair"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "experienced.discrimination" = "#faa31b",
+            "didnt.experience.discrimination" = "#f5f5f1"
+        )
+    ) +
+    coord_equal() +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.9, 1.75))
+
+    ggsave("pd.png", width = 6, height = 1)
+
+discrim_pd <- data.frame(name = c("experienced.discrimination", "didnt.experience.discrimination"), value = c(3, 7))
+
+discrim_pd |> 
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 30
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "experienced.discrimination" = "wheelchair",
+            "didnt.experience.discrimination" = "wheelchair"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "experienced.discrimination" = "#faa31b",
+            "didnt.experience.discrimination" = "#f5f5f1"
+        )
+    ) +
+    coord_equal() +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.9, 1.75))
+
+    ggsave(here("drafts/rightToNondiscrimination/pd.png"), width = 6, height = 1)
+
+discrim_pwd <- data.frame(name = c("experienced.discrimination", "didnt.experience.discrimination"), value = c(2, 8))
+
+discrim_pwd |> 
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 30
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "experienced.discrimination" = "user",
+            "didnt.experience.discrimination" = "user"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "experienced.discrimination" = "#faa31b",
+            "didnt.experience.discrimination" = "#f5f5f1"
+        )
+    ) +
+    coord_equal() +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.9, 1.75))
+
+    ggsave(here("drafts/rightToNondiscrimination/pwd.png"), width = 6, height = 1)
+```
+
+```{r}
+# SOGI
+
+codes <- list(
+    "GENID" = "Gender identity",
+    "SEXGENID" = "Sexual/gender identity",
+    "SEXO" = "Sexual orientation",
+    "SEXOGENID" = "Sexual orientation and gender identity",
+    "INTERS" = "Being intersex",
+    "TRANSG" = "Transgender background or being non-binary"
+)
+
+perceptions %>%
+    filter(Grounds.of.discrimination == "SEXOGENID", Disability.status == "_T", Income == "_T", Education == "_T", Location == "ALLAREA", Age == "ALLAGE", Sex != "BOTHSEX") %>%
+    filter(TimePeriod == 2023) %>%
+    group_by(Sex, Grounds.of.discrimination) %>%
+    summarize(Value = mean(Value)) %>%
+    ggplot(aes(x = as.factor(Sex), y = Value)) +
+    geom_col(fill = "#006fb7") +
+    scale_y_continuous(expand = c(0, 0)) +
+    theme_minimal_hgrid() +
+    labs(x = "Sex", y = "% perceiving discrimination")
+```
+
+```{r}
+sex_grounds_3yravg <- perceptions |> filter(TimePeriod %in% c(2023, 2024, 2025), Sex != "BOTHSEX", Grounds.of.discrimination != "ALL", Age == "ALLAGE", Disability.status == "_T", Income == "_T", Education == "_T") |> 
+group_by(GeoAreaName, Grounds.of.discrimination) |> 
+filter(TimePeriod == max(TimePeriod)) |>
+ungroup() |>
+group_by(Sex, Grounds.of.discrimination) |>
+summarize(mean_time = mean(TimePeriod), 
+n = n(), 
+mean_discrim = mean(Value, na.rm = T)) |> 
+filter(n > 4) |>
+select(-n, -mean_time) |>
+pivot_wider(names_from = Sex, values_from = mean_discrim) |>
+mutate(diff = FEMALE - MALE) |>
+pivot_longer(c(FEMALE, MALE))
+
+sex_grounds_3yravg |>
+left_join(getHRDx("discriminationgrounds") |> select(code, name) |> rename(ground = name), by = c("Grounds.of.discrimination" = "code")) |>
+mutate(ground = str_wrap(ground, 25)) |>
+ggplot(aes(x = value, y = fct_reorder(ground, diff), color = name)) + 
+geom_line(aes(group = ground), color = "grey70", linewidth = 0.8) +
+
+geom_point(size = 5) + 
+scale_color_manual(values = c("FEMALE" = palettes$gender[["F"]], "MALE" = palettes$gender[["M"]]), guide = "none") +
+labs(
+  title = "Perceived discrimination by ground, 2023–2025",
+  subtitle = glue::glue(
+    "Sorted from grounds where <span style='color:{palettes$gender[['F']]}'>**women**</span> report the most discrimination relative to men, to those where <span style='color:{palettes$gender[['M']]}'>**men**</span> report more"
+  ),
+  x = "Prevalence of discrimination", y = NULL
+) +
+scale_x_continuous(labels = scales::percent_format(scale = 1)) +
+theme_minimal_hgrid() +
+theme(plot.subtitle = element_markdown()) +
+annotate("text", x = -Inf, y = Inf, label = "↑ larger female gap", 
+         hjust = -0.1, vjust = 1.5, size = 3, fontface = "italic", color = "grey40") +
+annotate("text", x = -Inf, y = -Inf, label = "↓ larger male gap", 
+         hjust = -0.1, vjust = -0.5, size = 3, fontface = "italic", color = "grey40")
+```
+
+```{r}
+sex_grounds <- perceptions |> filter(TimePeriod %in% c(2023, 2024, 2025), Sex != "BOTHSEX", Grounds.of.discrimination != "ALL", Age == "ALLAGE", Disability.status == "_T", Income == "_T", Education == "_T")  |> 
+group_by(TimePeriod, Sex, Grounds.of.discrimination) |> 
+summarize(num_countries = n(), average = mean(Value)) |> left_join(getHRDx("discriminationGrounds") |> select(code, name), by = c("Grounds.of.discrimination" = "code")) |> select(TimePeriod, Sex, name, average, num_countries) |> arrange(name) |> pivot_wider(names_from = Sex, values_from = c(average, num_countries)) |> mutate(average_diff = average_MALE - average_FEMALE, more_discriminated = case_when(average_diff == 0 ~ "No difference",
+average_diff > 0 ~ "Men", 
+.default = "Women"), 
+avg_countries = (num_countries_FEMALE + num_countries_MALE)/2) |> select(TimePeriod, name, more_discriminated, avg_countries) |>
+ungroup() |>
+pivot_wider(names_from = TimePeriod, values_from = c(more_discriminated, avg_countries)) |>
+mutate(change = ifelse(more_discriminated_2023 != more_discriminated_2024, "Yes", "No"))
+```
+
+# Gender equality frameworks
+
+```{r}
+urls <- c("lfp", "emp", "vaw", "mar")
+labels <- c("overarching", "employment", "violence", "marriage")
+params <- list(
+    region = TRUE,
+    country = TRUE,
+    year = TRUE,
+    series = TRUE,
+    natureEstimate = TRUE
+)
+
+gender_eq <- list()
+
+for (i in 1:length(urls)) {
+    body <- list(
+        limit = 1000
+    )
+
+    response <- POST(
+        url = paste0("https://hrdx-api-staging.un.org/sgLglGeneq", urls[i], "/search"),
+        body = toJSON(body, auto_unbox = TRUE),
+        content_type_json()
+    )
+
+    results <- fromJSON(content(response, "text"), flatten = TRUE)$results
+
+    results$name <- labels[[i]]
+
+    gender_eq[[labels[i]]] <- results
+}
+```
+
+gender equality frameworks
+
+```{r}
+gender_equality <- gender_eq %>%
+    bind_rows() %>%
+    mutate(name = case_when(
+        name == "overarching" ~ "overarching legal frameworks and public life",
+        name == "employment" ~ "employment and economic benefits",
+        name == "violence" ~ "violence against women",
+        name == "marriage" ~ "marriage and family"
+    ), 
+    year = year(datetime))
+```
+
+frameworks over time - global
+
+```{r}
+gender_equality |>
+    filter(regionId == 1) |>
+    ggplot(aes(x = year, y = value)) +
+    geom_line(aes(color = name)) +
+    scale_color_ghro("misc") +
+    scale_y_continuous("% achievement of legal frameworks that\npromote, enforce, and monitor gender equality") +
+    scale_x_continuous(NULL) +
+    theme_minimal_grid() + 
+    theme(plot.margin = margin(r = 15, t = 5))
+```
+
+frameworks 2024 regions
+```{r}
+gender_equality |> 
+filter(year == 2024, !is.na(countryId)) |> 
+left_join(countries |> rename(country = name), by = c("countryId" = "id")) |>
+select(name, year, level1, value) |>
+left_join(regions |> select(id, name) |> rename(region = name), by = c("level1" = "id")) |>
+group_by(region, name) |>
+summarize(avg_unwt = mean(value), 
+n = n()) |>
+ggplot(aes(x = avg_unwt, y = fct_reorder(region, avg_unwt))) + 
+geom_col(aes(fill = region)) + 
+facet_wrap(~name, ncol = 1) + 
+scale_fill_ghro("region") + 
+guides(fill = "none") +
+scale_x_continuous("average regional achievement of legal frameworks, 2024", expand = c(0, 0)) +
+scale_y_discrete(NULL) +
+theme_minimal_vgrid() + 
+theme(axis.ticks = element_blank())
+```

@@ -1,0 +1,236 @@
+---
+title: "Right to seek asylum"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+  out-width: 100%
+---
+
+```{r setup}
+#| echo: false
+library(magrittr)
+library(showtext)
+library(hrbrthemes)
+library(waffle)
+library(tidyverse)
+library(cowplot)
+library(rvest)
+library(ggbeeswarm)
+library(scales)
+library(patchwork)
+library(httr)
+library(jsonlite)
+library(ggrepel)
+library(readxl)
+library(ggmosaic)
+library(ggarrow)
+library(here)
+library(ggtext)
+library(gt)
+
+source(here("ghro.R"))
+
+raw <- here("data/raw/")
+
+dir.create(here("drafts/rightToAsylum/datasets"), recursive = TRUE, showWarnings = FALSE)
+```
+
+Indicators
+
+- number of refugees
+
+```{r}
+unhcr <- read.csv(paste0(raw, "/persons_of_concern.csv"))
+
+additions <- data.frame(region = c("Unknown", "Stateless", "Asia"), iso3 = c("UNK", "XXA", "TIB"))
+
+main_regions <- countries |> select(iso3, level1) |> left_join(regions |> select(id, name) |> rename(region = name), by = c("level1" = "id")) |> select(-level1) |> rbind(additions)
+
+unhcr_level1 <- unhcr |> 
+left_join(main_regions |> rename(region_of_origin = region), by = c("Country.of.Origin.ISO" = "iso3")) |> 
+left_join(main_regions |> rename(region_of_asylum = region), by = c("Country.of.Asylum.ISO" = "iso3")) |>
+group_by(region_of_origin, region_of_asylum, Year) |> 
+summarize(num_refugees = sum(Refugees)) |> 
+ungroup() 
+
+unhcr_level1 |> 
+write.csv(here("drafts/rightToAsylum/datasets/refugee_flow_l1.csv"))
+```
+```{r}
+library(ggalluvial)
+
+unhcr_level1 |>
+    filter(Year == 2025, region_of_origin == "Asia") |>
+    mutate(prop = num_refugees / sum(num_refugees)) |>
+    DT::datatable() |>
+    DT::formatRound(5, digits = 2)
+
+
+ggplot(
+    unhcr_level1 |> filter(Year == 2025),
+    aes(y = num_refugees, axis1 = region_of_origin, axis2 = region_of_asylum)
+) +
+    geom_alluvium(aes(fill = region_of_origin), width = 1 / 12) +
+    geom_stratum(aes(fill = after_stat(stratum)), width = 1 / 12, color = "grey") +
+    geom_text_repel(stat = "stratum", aes(label = after_stat(stratum))) +
+    scale_fill_ghro("region") +
+    labs(title = "Refugees by region of origin and asylum") +
+    theme_nothing() +
+    theme(title = element_text())
+```
+
+1. While a majority of most refugees tend to seek asylum elsewhere in the region of their country of origin, about a fourth of refugees from Asia seek asylum in Europe. 
+
+I think what I'm trying to show is better reflected by the alluvial plot. Most African refugees go elsewhere in Africa, whereas a large portion in Asia go to Europe. 
+The bar plot shows the Asia vs Africa distinction, but without the scale of the actual arrow thickness, I think it's less obvious
+
+```{r}
+refugee_origin_prop <- unhcr_level1 |>
+    mutate(region_of_origin2 = case_when(region_of_origin %in% c("Stateless", "Unknown") ~ "Other*",
+        .default = region_of_origin
+    )) |>
+    group_by(Year, region_of_origin2) |>
+    summarize(total_refugees = sum(num_refugees)) |>
+    ungroup() |>
+    group_by(Year) |>
+    mutate(prop = total_refugees / sum(total_refugees))
+
+plot_prop <- refugee_origin_prop |>
+    ggplot(aes(x = Year, y = prop, color = region_of_origin2)) +
+    geom_line() +
+    scale_color_ghro("region") +
+    scale_y_continuous("proportion of the world's refugees", labels = scales::percent_format(), expand = c(0, 0)) +
+    labs(x = NULL) +
+    theme_minimal_grid() + 
+    labs(caption = "* Other includes refugees of unknown origin and those who are stateless")
+
+    plot_prop
+```
+
+1. Since 2021, the proportion of the world's refugees from Europe has risen 20%.
+
+2. The proportion from Asia has dropped from a majority of about 3 in 5 refugees to about 2 in 5 refugees.
+
+3. For the first time, the highest proportion of refugees is from Africa, not Asia, though both are around 40%. 
+
+```{r}
+refugee_origin_num <- unhcr_level1 |>
+    mutate(region_of_origin2 = case_when(region_of_origin %in% c("Stateless", "Unknown") ~ "Other*",
+        .default = region_of_origin
+    )) |>
+    group_by(Year, region_of_origin2) |>
+    summarize(total_refugees = sum(num_refugees)) |>
+    ungroup()
+
+plot_n <- refugee_origin_num |>
+    ggplot(aes(x = Year, y = total_refugees / 1e6, color = region_of_origin2)) +
+    geom_line() +
+    scale_color_ghro("region") +
+    scale_y_continuous("Number of refugees, millions", expand = c(0, 0)) +
+    labs(x = NULL) +
+    theme_minimal_grid() +
+    labs(caption = "* Other includes refugees of unknown origin and those who are stateless")
+
+plot_n
+```
+
+```{r}
+#| fig-width: 10
+#| fig-height: 6
+plot_prop + plot_n
+```
+
+1. The raw number shows a similar trend - the number of refugees from Asia has dropped about ~5 million since a peak in 2023. 
+
+2. However, it shows that while the proportion from Asia has consistently dropped since 2020, the actual number of refugees only dropped in 2023. The reason that the proportion dropped was the large increase in the number from Europe in 2022. 
+
+```{r}
+#| fig-width: 10
+#| fig-height: 6
+most_refugees_origin <- unhcr |>
+    group_by(Year, Country.of.Origin) |>
+    summarize(total_refugees = sum(Refugees)) |>
+    group_by(Year) |>
+    slice_max(order_by = total_refugees, n = 10)
+
+most_refugees_origin |>
+    ggplot(aes(x = total_refugees / 1e6, y = fct_reorder(Country.of.Origin, total_refugees))) +
+    geom_col(fill = "#006fb7") +
+    facet_wrap(~Year, scales = "free_y") +
+    scale_x_continuous("Number of refugees, millions") +
+    scale_y_discrete(NULL) +
+    theme_minimal_vgrid(12) +
+    panel_border()
+```
+
+In flourish, will use year filter rather than grid (so see one by one)
+
+1. Syrian Arab Republic had the most, until 2025, where it's decreased, so Ukraine now has most. 
+
+(nicolas will likely veto this)
+
+```{r}
+#| fig-width: 10
+#| fig-height: 6
+most_refugees_asylum <- unhcr |>
+    group_by(Year, Country.of.Asylum) |>
+    summarize(total_refugees = sum(Refugees)) |>
+    group_by(Year) |>
+    slice_max(order_by = total_refugees, n = 10)
+
+most_refugees_asylum |>
+    ggplot(aes(x = total_refugees / 1e6, y = fct_reorder(Country.of.Asylum, total_refugees))) +
+    geom_col(fill = "#006fb7") +
+    facet_wrap(~Year, scales = "free_y") +
+    scale_x_continuous("Number of refugees, millions") +
+    scale_y_discrete(NULL) +
+    theme_minimal_vgrid(12) +
+    panel_border()
+```
+
+1. Turkey tends to be the destination for asylum for millions of refugees. Iran was in 2023 and 2024, but was not in 2025. 
+
+```{r}
+totals <- unhcr |>
+    group_by(Year) |>
+    summarize(across(Refugees:Others.of.concern, sum))
+
+totals |>
+    ggplot(aes(x = Year, y = Refugees / 1e6)) +
+    geom_line(color = "#006fb7") +
+    scale_y_continuous("Refugees, millions") +
+    scale_x_continuous(NULL) +
+    theme_minimal_grid()
+
+totals_asylum <- totals |>
+    pivot_longer(-Year) |>
+    mutate(name = gsub("\\.", " ", name)) |>
+    filter(name %in% c("Asylum seekers", "Refugees"))
+
+totals_asylum |>
+    ggplot(aes(x = Year, y = value / 1e6, color = name)) +
+    geom_line() +
+    geom_text(data = totals_asylum |> filter(Year == 2025), aes(label = name), hjust = 0, size = 4) +
+    scale_color_manual(values = c("Refugees" = "#3D5A80", "Asylum seekers" = "#98C1D9"), guide = "none") +
+    scale_y_continuous("Millions of people") +
+    scale_x_continuous(NULL) +
+    theme_minimal_grid() +
+    theme(plot.margin = margin(r = 60)) +
+    coord_cartesian(clip = "off")
+```
+
+```{r}
+unhcr |>
+    left_join(main_regions |> rename(region_of_origin = region), by = c("Country.of.Origin.ISO" = "iso3")) |>
+    left_join(main_regions |> rename(region_of_asylum = region), by = c("Country.of.Asylum.ISO" = "iso3")) |>
+    select(Country.of.Origin, Country.of.Asylum, region_of_origin, region_of_asylum, Refugees, Year) |>
+    group_by(Year, Country.of.Origin, region_of_origin) |>
+    summarize(total_refugees = sum(Refugees)) |>
+    filter(total_refugees > 1e4) |> 
+    DT::datatable()
+```

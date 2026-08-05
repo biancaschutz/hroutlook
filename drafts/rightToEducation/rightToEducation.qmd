@@ -1,0 +1,721 @@
+---
+title: "Right to education"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+  out-width: 100%
+---
+
+```{r setup}
+#| echo: false
+library(magrittr)
+library(showtext)
+library(hrbrthemes)
+library(waffle)
+library(tidyverse)
+library(cowplot)
+library(rvest)
+library(ggbeeswarm)
+library(scales)
+library(httr)
+library(jsonlite)
+library(ggrepel)
+library(readxl)
+library(ggmosaic)
+library(ggarrow)
+library(here)
+library(ggtext)
+source(here("consts.R"))
+
+dir.create(here("drafts/rightToEducation/datasets"), recursive = TRUE, showWarnings = FALSE)
+path <- here("drafts/rightToEducation/datasets/")
+raw <- here("data/raw/")
+raw_right <- here("data/raw/rightToEducation/")
+```
+
+# Indicators
+
+- Functional skills
+
+  - Population achieving minimum functional skills proficiency (%) (SE_ADT_FUNS)
+
+  - Immigration status parity in functional skills (ratio) (SE_IMP_FPOF)
+
+  - Gender parity in functional skills (ratio) (SE_TOT_GPI_FS)
+
+  - Socio-economic parity in functional skills (ratio) (SE_TOT_SESPI_FS)
+
+- Completion rate
+
+  - Education completion rate (%) (SE_TOT_CPLR)
+
+  - Gender parity in completion rate (ratio) (SE_AGP_CPRA)
+
+  - Location parity in education completion rate (ratio) (SE_ALP_CPLR)
+
+  - Wealth parity in education completion rate (ratio) (SE_AWP_CPRA)
+
+- ICT skills
+
+  - Gender parity in ICT skills (ratio) (SE_GPI_ICTS)
+
+- Education and training
+
+  - Gender parity in education and training participation (ratio) (SE_GPI_PART)
+
+- Organized learning
+
+  - Gender parity in organized learning participation (ratio) (SE_GPI_PTNPRE)
+
+- Qualified teachers
+
+  - Teachers with minimum required qualifications (%) (SE_TRA_GRDL)
+
+  - Gender parity in qualified teachers (ratio) (SE_GPI_TCAQ)
+
+- Reading and mathematics
+
+  - Children and youth achieving minimum reading and math proficiency (%) (SE_TOT_PRFL)
+
+  - Gender parity in reading and mathematics (ratio) (SE_TOT_GPI)
+
+  - Language test parity in reading and mathematics (ratio) (SE_LGP_ACHI)
+
+  - Immigration status parity in reading and mathematics (ratio) (SE_NAP_ACHI)
+
+  - Rural-urban parity in reading and mathematics (ratio) (SE_TOT_RUPI)
+
+  - Socio-economic parity in reading and mathematics (ratio) (SE_TOT_SESPI)
+
+- Youth not in education
+
+  - Youth not in education, employment or training, 19th ICLS (%) (SL_TLF_NEET_19ICLS)
+
+```{r}
+#| include: false
+#| echo: false
+# getting all the data from HRDx
+
+right_codes <- c(
+  "SE_ADT_FUNS",
+  "SE_AGP_CPRA",
+  "SE_ALP_CPLR",
+  "SE_AWP_CPRA",
+  "SE_GPI_ICTS",
+  "SE_GPI_PART",
+  "SE_GPI_PTNPRE",
+  "SE_GPI_TCAQ",
+  "SE_TOT_GPI",
+  "SE_IMP_FPOF",
+  "SE_LGP_ACHI",
+  "SE_NAP_ACHI",
+  "SE_TOT_CPLR",
+  "SE_TOT_GPI_FS",
+  "SE_TOT_PRFL",
+  "SE_TOT_RUPI",
+  "SE_TOT_SESPI",
+  "SE_TOT_SESPI_FS",
+  "SE_TRA_GRDL",
+  "SL_TLF_NEET_19ICLS"
+)
+
+right_raw_data <- list()
+for (d in right_codes) {
+    right_raw_data[[d]] <- getHRDx(d, offline = TRUE, raw = raw_right)
+}
+```
+
+# Completion rate
+
+```{r}
+#| include: false
+#| echo: false
+comp_rt <- right_raw_data[['SE_TOT_CPLR']] |>
+mutate(year = year(datetime))
+
+dim(comp_rt)
+colnames(comp_rt) # disaggs available are sexCode, urban/rural, quantile, education, 
+
+length(unique(comp_rt$countryId)) # we have data for 168 countries
+
+unique(comp_rt$regionId) # and regions, mostly sub-regions
+
+sort(unique(year(comp_rt$datetime))) # data for 2010-2025
+
+for (disagg in c("sexCode", "dwellingUrbanisationCode", 
+                "educationCode", "quantileCode")) {
+    print(table(comp_rt[[disagg]]))
+                }
+```
+
+```{r}
+comp_world <- comp_rt |>
+    filter(regionId == 1) |>
+    left_join(edu, by = c("educationCode" = "code"))
+
+pal <- palettes$education(11)
+
+comp_world |>
+    filter(sexCode == "_T", dwellingUrbanisationCode == "_T", quantileCode == "_T") |>
+    ggplot(aes(x = year, y = value)) +
+    geom_line(aes(color = factor(name, levels = c("Primary education", "Lower secondary education", "Upper secondary education")))) +
+    scale_color_manual("Education level", values = c("Primary education" = pal[3], "Lower secondary education" = pal[6], "Upper secondary education" = pal[11])) +
+    scale_y_continuous("education completion rate", labels = scales::percent_format(scale = 1)) +
+    labs(x = NULL) +
+    theme_minimal_grid()
+
+comp_world |>
+    filter(sexCode != "_T", dwellingUrbanisationCode == "_T", quantileCode == "_T", year == max(year)) |>
+    ggplot(aes(x = factor(name, levels = c("Primary education", "Lower secondary education", "Upper secondary education"), labels = c("Primary education", "Lower secondary\neducation", "Upper secondary\neducation")), y = value)) +
+    geom_col(aes(fill = sexCode), position = "dodge") +
+    scale_fill_ghro("gender") +
+    scale_y_continuous("education completion rate", labels = scales::percent_format(scale = 1), expand = c(0, 0)) +
+    labs(x = NULL) +
+    theme_minimal_hgrid()
+```
+
+1. Levels of completion drop as education level advances
+
+2. Girls tend to have higher levels of completion across all levels monitored. 
+
+```{r}
+#| include: false
+#| echo: false
+comp_loc <- right_raw_data[["SE_ALP_CPLR"]] |>
+    mutate(year = year(datetime))
+
+comp_gen <- right_raw_data[["SE_AGP_CPRA"]] |>
+    mutate(year = year(datetime))
+
+    comp_wea <- right_raw_data[["SE_AWP_CPRA"]] |>
+    mutate(year = year(datetime))
+
+
+dim(comp_loc)
+colnames(comp_loc) # disaggs available are sexCode, quantile, education
+colnames(comp_gen) # disaggs available are dwellingUrbanisationCode, quantile, education,
+colnames(comp_wea)
+
+length(unique(comp_loc$countryId)) # we have data for 168 countries
+
+unique(comp_loc$regionId) # and no regions
+
+sort(unique(year(comp_loc$datetime))) # data for 2010-2024
+```
+
+```{r}
+comp_loc_world <- comp_loc |>
+    filter(sexCode == "_T", quantileCode == "_T", year == max(year)) |>
+    group_by(year, educationCode) |>
+    summarize(m = symmetrize_ratio(mean(value)), 
+    n = n()) |>
+    left_join(edu, by = c("educationCode" = "code")) |>
+    ungroup() |>
+    mutate(name = factor(name, levels = c("Primary education", "Lower secondary education", "Upper secondary education"), labels = c("Primary education", "Lower secondary\neducation", "Upper secondary\neducation")))
+
+comp_loc_world |>
+    ggplot(aes(x = m, y = name)) +
+                     geom_vline(xintercept = 1, color = "gray30", linetype = "dashed") +
+    geom_segment(aes(x = m, y = name, yend = name), xend = 1, color = "#7e9e9d") + 
+    geom_point(color = "#7e9e9d") + 
+    scale_x_continuous(NULL, limits = c(0, 2), expand = c(0, 0),  labels = function(x) {
+        ifelse(
+            x == .5,
+            "Higher\n← completion rate\nin urban areas",
+            ifelse(x == 1.5, "Higher\ncompletion rate →\nin rural areas", ifelse(x == 1, "Parity", x))
+        )
+    }) + 
+    scale_y_discrete(NULL) +
+    theme_minimal_vgrid()
+```
+
+1. As education level advances, the difference in rate of completion between urban and rural students grows/becomes more disparate. 
+
+2. Possibility of a trend where the pandemic resulted in the decline, particularly in upper secondary?
+
+```{r}
+comp_gen_world <- comp_gen |>
+    filter(dwellingUrbanisationCode == "_T", quantileCode == "_T", year == max(year)) |>
+    group_by(year, educationCode) |>
+    summarize(m = symmetrize_ratio(mean(value))) |>
+    left_join(edu, by = c("educationCode" = "code")) |>
+    ungroup() |>
+    mutate(name = factor(name, levels = c("Primary education", "Lower secondary education", "Upper secondary education"), labels = c("Primary education", "Lower secondary\neducation", "Upper secondary\neducation")))
+
+comp_gen_world |>
+     ggplot(aes(x = m, y = name)) +
+                      geom_vline(xintercept = 1, color = "gray30", linetype = "dashed") +
+    geom_segment(aes(x = m, y = name, yend = name), xend = 1, color = "#990099") + 
+    geom_point(color = "#990099") + 
+    scale_x_continuous(NULL, limits = c(0, 2), expand = c(0, 0),  labels = function(x) {
+        ifelse(
+            x == .5,
+            "Higher\n← completion rate\nfor boys",
+            ifelse(x == 1.5, "Higher\ncompletion rate →\nfor girls", ifelse(x == 1, "Parity", x))
+        )
+    }) + 
+    scale_y_discrete(NULL) +
+    theme_minimal_vgrid()
+```
+
+1. Globally, girls and boys are about as likely to complete education at all levels, though there is a slight trend towards girls completing upper secondary at a higher rate. 
+
+```{r}
+comp_wea_world <- comp_wea |>
+    filter(dwellingUrbanisationCode == "_T", sexCode == "_T", year == max(year)) |>
+    group_by(year, educationCode) |>
+    summarize(m = symmetrize_ratio(mean(value))) |>
+    left_join(edu, by = c("educationCode" = "code")) |>
+    ungroup() |>
+    mutate(name = factor(name, levels = c("Primary education", "Lower secondary education", "Upper secondary education"), labels = c("Primary education", "Lower secondary\neducation", "Upper secondary\neducation")))
+
+colors <- palettes$wealth(5)
+
+comp_wea_world |>
+         ggplot(aes(x = m, y = name)) +
+                 geom_vline(xintercept = 1, color = "gray30", linetype = "dashed") +
+
+    geom_segment(aes(x = m, y = name, yend = name), xend = 1, color = "#825516") + 
+    geom_point(color = "#825516") + 
+    scale_x_continuous(NULL, limits = c(0, 2), expand = c(0, 0),  labels = function(x) {
+        ifelse(
+            x == .5,
+            "Higher\n← completion rate\nfor wealthier children",
+            ifelse(x == 1.5, "Higher\ncompletion rate →\nfor poorer children", ifelse(x == 1, "Parity", x))
+        )
+    }) + 
+    scale_y_discrete(NULL) +
+    theme_minimal_vgrid()
+```
+
+1. Gap here is the widest between education levels, and also most disparity between advantaged and disadvantaged groups. 
+
+2. Wealthier children are more than twice as likely to complete upper secondary education as poorer children. 
+
+# Youth not in education
+
+```{r}
+#| include: false
+#| echo: false
+neet <- getHRDx('SL_TLF_NEET', list(where = list(datetime = paste0("01-01-", 2010:2026)))) |>
+mutate(year = year(datetime))
+
+neet |> write.csv(here("data/raw/rightToEducation/SL_TLF_NEET.csv"))
+
+dim(neet)
+colnames(neet) # disaggs for sex
+
+length(unique(neet$countryId)) # we have data for 182 countries
+
+unique(neet$regionId) # and no regions
+
+sort(unique(year(neet$datetime))) # data for 2010-2025
+```
+
+```{r}
+world_neet <- neet |>
+filter(regionId == 1, sexCode == "_T")
+
+world_neet |>
+ggplot(aes(x = year, y = value)) +
+geom_line(color = "#006fb7") +
+        geom_hline(yintercept = 0, color = "gray30", linetype = "dashed") +
+        annotate("text", x = 2025.25, y = 0, hjust = 0, label = "Target") +
+                annotate("text", x = 2025.25, y = world_neet |> filter(year == 2025) |> pull(value), hjust = 0, label = world_neet |> filter(year == 2025) |> pull(value) |> scales::percent(scale = 1), color = "#006fb7") +
+scale_x_continuous(NULL, expand = c(0, 0)) +
+scale_y_continuous("Proportion of youth not in education,\nemployment or training", labels = scales::percent_format(scale = 1), limits = c(0, 50), expand = expansion(add = .25)) +
+theme_minimal_grid() +
+theme(plot.margin = margin(r = 50, t = 10)) +
+coord_cartesian(clip = "off")
+```
+
+1. 1 in 5 children globally are not in education, employment or training. 
+
+2. Not much change or improvement in the past 15 years
+
+```{r}
+world_sex_neet <- neet |>
+filter(regionId == 1, sexCode != "_T")
+
+world_sex_neet |>
+ggplot(aes(x = year, y = value)) +
+geom_line(aes(color = sexCode)) +
+        geom_hline(yintercept = 0, color = "gray30", linetype = "dashed") +
+        annotate("text", x = 2025.25, y = 0, hjust = 0, label = "Target") +
+geom_text(data = world_sex_neet |> filter(year == max(year)), aes(color = sexCode, label = paste0(ifelse(sexCode == "F", "Female", "Male"), "\n", scales::percent(value, scale = 1))), x = 2025.25, hjust = 0) +
+scale_color_ghro("gender") +
+scale_x_continuous(NULL, expand = c(0, 0)) +
+scale_y_continuous("Proportion of youth not in education,\nemployment or training", labels = scales::percent_format(scale = 1), limits = c(0, 50), expand = expansion(add = .25)) +
+guides(color = "none") +
+theme_minimal_grid() +
+theme(plot.margin = margin(r = 50, t = 10)) +
+coord_cartesian(clip = "off")
+```
+
+1. Disaggregation by sex reveals that this number rises to more than 1 in 4 for girls, and drops to over 1 in 10 for boys. 
+
+```{r}
+region_neet <- neet |> 
+filter(year == max(year), sexCode == "_T") |> 
+mutate(regionId = as.numeric(regionId)) |> 
+inner_join(regions, by = "regionId")
+
+world_val <- region_neet |> 
+filter(regionId == 1) |>
+pull(value)
+
+region_neet |>
+filter(regionId != 1) |>
+ggplot(aes(x = fct_reorder(name, value), y = value)) + 
+geom_col(fill = "#006fb7") +
+        geom_hline(yintercept = world_val, color = "gray30", linetype = "dashed") +
+        annotate("text", x = 2, y = world_val + .1, vjust = 0, label = paste0("Global average: ", scales::percent(world_val, scale = 1))) +
+scale_y_continuous("Proportion of youth not in education,\nemployment or training", expand = c(0, 0), labels = scales::percent_format(scale = 1)) +
+scale_x_discrete(NULL) +
+theme_minimal_hgrid() 
+```
+
+1. Europe has the lowest proportion (best), whereas the Asia and Africa are higher than the global average and are the most "behind"
+
+# Skills
+
+## ICT skills
+
+```{r}
+#| include: false
+#| echo: false
+gender_ict <- right_raw_data[['SE_GPI_ICTS']] |> 
+mutate(year = year(datetime))
+
+dim(gender_ict)
+colnames(gender_ict) # skillTypeCode
+length(unique(gender_ict$countryId)) # we have data for 102 countries
+
+unique(gender_ict$regionId) # and no regions
+
+sort(unique(year(gender_ict$datetime))) # data for 2010-2025
+
+basic <- gender_ict |> 
+filter(skillTypeCode %in% c("SKILL_ICTINFOBAS", "SKILL_ICTCOMMBAS", "SKILL_ICTSAFEBAS", "SKILL_ICTPROBBAS", "SKILL_ICTCONTBAS"), 
+year == 2024) |> 
+left_join(countryISO, by = c("countryId" = "Code")) |>
+left_join(getHRDx("skillType"), by = c("skillTypeCode" = "code")) |>
+group_by(name) |>
+summarize(m = symmetrize_ratio(mean(value))) |>
+mutate(name = trimws(str_remove_all(name, "ICT Skill: Basic|skills")), 
+col = case_when(between(m, 1 - .01, 1.01) ~ "P", 
+m < 1 - .01 ~ "M", 
+.default = "F"))
+
+basic <- gender_ict |> 
+filter(skillTypeCode %in% c("SKILL_ICTINFOBAS", "SKILL_ICTCOMMBAS", "SKILL_ICTSAFEBAS", "SKILL_ICTPROBBAS", "SKILL_ICTCONTBAS"), 
+year == 2024) |> 
+left_join(countryISO, by = c("countryId" = "Code")) |>
+left_join(getHRDx("skillType"), by = c("skillTypeCode" = "code")) |>
+group_by(name) |>
+summarize(m = symmetrize_ratio(mean(value))) |>
+mutate(name = trimws(str_remove_all(name, "ICT Skill: Basic|skills")), 
+col = ifelse(m > 1, "F", "M"))
+
+above_basic <- gender_ict |> 
+filter(skillTypeCode %in% c("SKILL_ICTINFOABAS", "SKILL_ICTCOMMABAS", "SKILL_ICTSAFEABAS", "SKILL_ICTPROBABAS", "SKILL_ICTCONTABAS"), 
+year == 2024) |> 
+left_join(countryISO, by = c("countryId" = "Code")) |>
+left_join(getHRDx("skillType"), by = c("skillTypeCode" = "code")) |>
+group_by(name) |>
+summarize(m = symmetrize_ratio(mean(value))) |>
+mutate(name = trimws(str_remove_all(name, "ICT Skill: Above basic|skills")), 
+col = case_when(between(m, 1 - .01, 1.01) ~ "P", 
+m < 1 - .01  ~ "M", 
+.default = "F"))
+```
+
+```{r}
+basic |>
+ggplot(aes(x = m, y = fct_reorder(str_wrap(name, 20), m))) +
+geom_point(aes(color = col), size = 5) + 
+scale_color_ghro("gender") +
+        geom_vline(xintercept = 1, color = "gray30", linetype = "dashed") +
+
+scale_x_continuous(NULL, expand = c(0, 0), limits = c(0, 2), labels = function(x) {
+        ifelse(
+            x == 1,
+            "Gender parity = 1",
+            x
+        )
+    }) + 
+    scale_y_discrete(NULL) +
+annotate("richtext", x = 1.05, y = 5.5,
+           label = "higher rate of →<br>basic skills<br>among <span style='color:#990099'>women</span>",
+           hjust = 0, fill = NA, label.color = NA) +
+annotate("richtext", x = .95, y = 5.5,
+           label = "← higher rate of<br>basic skills<br>among <span style='color:#009900'>men</span>",
+           hjust = 1, fill = NA, label.color = NA) +
+    theme_minimal_grid() + 
+    theme(legend.position = "none", plot.margin = margin(t = 20))  +
+    coord_cartesian(clip = "off")
+```
+
+1. Most skills are close to parity - but info and data literacy lean towards men, whereas content creation leans towards women
+
+```{r}
+above_basic |>
+ggplot(aes(x = m, y = fct_reorder(str_wrap(name, 20), m))) +
+geom_point(aes(color = col), size = 5) + 
+scale_color_ghro("gender") +
+        geom_vline(xintercept = 1, color = "gray30", linetype = "dashed") +
+
+scale_x_continuous(NULL, expand = c(0, 0), limits = c(0, 2), labels = function(x) {
+        ifelse(
+            x == 1,
+            "Gender parity = 1",
+            x
+        )
+    }) + 
+    scale_y_discrete(NULL) +
+annotate("richtext", x = 1.05, y = 5.5,
+           label = "higher rate of →<br>above basic skills<br>among <span style='color:#990099'>women</span>",
+           hjust = 0, fill = NA, label.color = NA) +
+annotate("richtext", x = .95, y = 5.5,
+           label = "← higher rate of<br>above basic skills<br>among <span style='color:#009900'>men</span>",
+           hjust = 1, fill = NA, label.color = NA) +
+    theme_minimal_grid() + 
+    theme(legend.position = "none", plot.margin = margin(t = 20)) +
+    coord_cartesian(clip = "off")
+```
+
+## Education and training participation
+
+```{r}
+#| include: false
+#| echo: false
+
+edutrain <- right_raw_data[['SE_GPI_PART']] |>
+mutate(year = year(datetime))
+
+dim(edutrain)
+colnames(edutrain) # ageCode - choose Y15T64, most comprehensive/total
+length(unique(edutrain$countryId)) # we have data for 167 countries
+
+table(edutrain$ageCode)
+
+unique(edutrain$regionId) # and no regions
+
+sort(unique(year(edutrain$datetime))) # data for 2010-2025
+
+edutrain |> count(year) # not a lot of data for 2025 - exclude it
+```
+
+```{r}
+edutrain |>
+filter(ageCode == "Y15T64", year != 2025) |>
+group_by(year) |>
+summarize(m = symmetrize_ratio(mean(value))) |>
+ggplot(aes(x = year, y = m)) + 
+        geom_hline(yintercept = 1, color = "gray30", linetype = "dashed") +
+
+geom_line(color = "#006fb7") + 
+scale_y_continuous(NULL, expand = c(0, 0), limits = c(0, 2), labels = function(x) {
+        ifelse(
+            x == 1,
+            "Higher\nparticipation rate\namong women ↑\n\nGender parity = 1\n\nHigher\nparticipation rate\namong men ↓",
+            x
+        )
+    }) + 
+    scale_x_continuous(NULL, expand = c(0, 0)) +
+    theme_minimal_grid()
+```
+
+1. Rate is near parity, but leans towards women participating more
+
+## Functional training
+
+Most recent data is from 2017, excluding this bc that's almost 10 years old. Doesn't really say a lot about currently.
+```{r}
+#| include: false
+#| echo: false
+func <- right_raw_data[["SE_ADT_FUNS"]]
+
+dim(func)
+colnames(func) 
+length(unique(func$countryId))
+
+unique(func$regionId) # and no regions
+
+sort(unique(year(func$datetime))) # data for 2010-2017 - don't use this
+```
+
+## Reading and math
+Most recent global data is from 2019 - might exclude, or use averages of country data
+```{r}
+#| include: false
+#| echo: false
+rm <- right_raw_data[["SE_TOT_PRFL"]] |>
+mutate(year = year(datetime))
+
+dim(rm)
+colnames(rm) # skillTypeCode, sexCode
+length(unique(rm$countryId)) # we have data for 147 countries
+
+unique(rm$regionId) # and a few regions
+
+sort(unique(year(rm$datetime))) # data for 2010-2024
+```
+
+```{r}
+# world_rm <- rm |> 
+# filter(regionId == 1, sexCode == "_T") |>
+# left_join(edu, by = c("educationCode" = "code"))
+
+
+# pct_change <- function(new, old) {
+#   (new - old)/abs(old)
+# }
+
+# p_math_change <- pct_change(p_math_2019, p_math_2010)
+# p_read_change <- pct_change(p_read_2019, p_read_2010)
+# ls_math_change <- pct_change(ls_math_2019, ls_math_2010)
+# ls_read_change <- pct_change(ls_read_2019, ls_read_2010)
+
+# world_rm <- world_rm |> 
+# mutate(annotation = case_when(year == 2019 & skillTypeCode == "SKILL_MATH" & name == "Lower secondary education" ~ ls_math_change, 
+# year == 2019 & skillTypeCode == "SKILL_MATH" & name == "Primary education" ~ p_math_change, 
+# year == 2019 & skillTypeCode == "SKILL_READ" & name == "Primary education" ~ p_read_change, 
+# year == 2019 & skillTypeCode == "SKILL_READ" & name == "Lower secondary education" ~ ls_read_change, 
+# .default = NA), 
+# annotation = ifelse(annotation > 0, 
+# paste0(scales::percent(annotation, accuracy = .1), " increase in\n", ifelse(skillTypeCode == "SKILL_READ", "reading proficiency rate", "mathematics proficiency rate")), 
+# paste0(scales::percent(abs(annotation), accuracy = .1), " decrease in\n", ifelse(skillTypeCode == "SKILL_READ", "reading proficiency rate", "mathematics proficiency rate"))))
+
+# world_rm |>
+# ggplot(aes(x = year, y = value)) + 
+# geom_line(aes(color = skillTypeCode)) + 
+# geom_text(aes(label = annotation, color = skillTypeCode), hjust = 0) + 
+# facet_wrap(~fct_rev(name), ncol = 1) +
+# scale_color_manual(NULL, values = c("SKILL_MATH" = palettes$cats[3], "SKILL_READ" = palettes$cats[4]), labels = c("SKILL_MATH" = "Mathematics", "SKILL_READ" = "Reading"), guide = "none") +
+# scale_y_continuous("% children and youth achieving minimum proficiency level", limits = c(0, 100), expand = c(0, 0)) +
+# scale_x_continuous(NULL, expand = c(0, 0), breaks = seq(2010, 2019, by = 3)) + 
+# theme_minimal_grid() +
+# panel_border() + 
+# theme(plot.margin = margin(r = 200)) +
+# coord_cartesian(clip = "off")
+```
+
+1. Lower secondary's level of literacy and mathematics is improving slightly, whereas primary is falling
+
+## parity read math
+
+```{r}
+g_rm <- right_raw_data[["SE_TOT_GPI"]] |> 
+mutate(year = year(datetime)) |>
+filter(year == max(year), educationCode == "ISCED11_10") |> 
+group_by(educationCode, skillTypeCode, year) |>
+summarize(m = mean(value), n = n(), code = "Gender") |> 
+ungroup() |>
+filter(n > 10)
+
+lang_rm <- right_raw_data[["SE_LGP_ACHI"]] |> 
+mutate(year = year(datetime)) |>
+filter(year == max(year), educationCode == "ISCED11_10") |> 
+group_by(educationCode, skillTypeCode, year) |>
+summarize(m = mean(value), n = n(), code = "Language test") |> 
+ungroup() |>
+filter(n > 10)
+
+imm_rm <- right_raw_data[["SE_NAP_ACHI"]] |> 
+mutate(year = year(datetime)) |>
+filter(year == max(year), educationCode == "ISCED11_10") |> 
+group_by(educationCode, skillTypeCode, year) |>
+summarize(m = mean(value), n = n(), code = "Immigration status") |> 
+ungroup() |>
+filter(n > 10)
+
+ur_rm <- right_raw_data[["SE_TOT_RUPI"]] |> 
+mutate(year = year(datetime)) |>
+filter(year == max(year), educationCode == "ISCED11_10") |> 
+group_by(educationCode, skillTypeCode, year) |>
+summarize(m = mean(value), n = n(), code = "Rural-urban") |> 
+ungroup() |>
+filter(n > 10)
+
+se_rm <- right_raw_data[["SE_TOT_SESPI"]] |> 
+mutate(year = year(datetime)) |>
+filter(year == max(year), educationCode == "ISCED11_10") |> 
+group_by(educationCode, skillTypeCode, year) |>
+summarize(m = mean(value), n = n(), code = "Socio-economic") |> 
+ungroup() |>
+filter(n > 10)
+
+rm_ratios <- rbind(g_rm, lang_rm, imm_rm, ur_rm, se_rm)
+
+rm_ratios |>
+ggplot(aes(x = code, y = m)) + 
+geom_point(color = "#006fb7", size = 5) +
+        geom_hline(yintercept = 1, color = "gray30", linetype = "dashed") +
+theme_minimal_hgrid()
+```
+
+1. Socio-economic status has the biggest gap in proficiency, followed by language test and rural-urban changes
+
+# Organized learning
+```{r}
+org_learn <- right_raw_data[['SE_GPI_PTNPRE']] |> 
+filter(regionId == 1) |>
+mutate(year = year(datetime), value = symmetrize_ratio(value))
+
+org_learn |> 
+ggplot(aes(x = year, y = value)) + 
+geom_line(color = "#006fb7") +         
+geom_hline(yintercept = 1, color = "gray30", linetype = "dashed") + 
+theme_minimal_grid() + 
+scale_y_continuous(limits = c(.5, 1.5), expand = c(0, 0))
+```
+
+1. Very close to parity, meaning women are almost just as involved in organized learning as men
+
+# Education and training
+
+```{r}
+# edu_train <- right_raw_data[['SE_GPI_PART']] |> 
+# filter(ageCode != "Y15T64") |>
+# group_by(ageCode, datetime) |>
+# summarize(m = symmetrize_ratio(mean(value))) |>
+# mutate(year = year(datetime))
+
+# edu_train |>
+# ggplot(aes(x = ))
+```
+
+# Qualified teachers
+
+```{r}
+#| echo: false
+#| include: false
+
+teachers <- right_raw_data[["SE_TRA_GRDL"]] |>
+    mutate(year = year(datetime))
+
+dim(teachers)
+colnames(teachers) # educationCode, sexCode
+length(unique(teachers$countryId)) # we have data for 165 countries
+
+unique(teachers$regionId) # and some regions
+
+sort(unique(year(teachers$datetime))) # data for 2010-2025
+```
+
+```{r}
+teachers |>
+    filter(regionId == 1, sexCode == "_T", educationCode %in% c("ISCED11_10", "ISCED11_2", "ISCED97_3"), year > 2015) |>
+    left_join(edu, by = c("educationCode" = "code")) |>
+    ggplot(aes(x = year, y = value)) +
+    geom_line(aes(color = factor(name, levels = c("Primary education", "Lower secondary education", "Upper secondary education")))) +
+    scale_color_manual("Education level", values = c("Primary education" = pal[4], "Lower secondary education" = pal[7], "Upper secondary education" = pal[11])) +
+    scale_y_continuous("% teachers") +
+    theme_minimal_grid()
+```

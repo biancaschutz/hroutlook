@@ -1,0 +1,450 @@
+---
+title: "Right to food"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+  out-width: 100%
+---
+
+```{r setup}
+#| echo: false
+library(magrittr)
+library(showtext)
+library(hrbrthemes)
+library(waffle)
+library(tidyverse)
+library(cowplot)
+library(rvest)
+library(ggbeeswarm)
+library(scales)
+library(httr)
+library(jsonlite)
+library(ggrepel)
+library(readxl)
+library(ggmosaic)
+library(ggarrow)
+library(here)
+library(ggtext)
+source(here("ghro.R"))
+
+raw <- here("data/raw/")
+
+dir.create(here("drafts/rightToFood/datasets"), recursive = TRUE, showWarnings = FALSE)
+```
+
+Indicators
+
+- Prevalence of undernourishment (45)
+
+  - number of undernourished people (SN_ITK_DEFCN)
+
+  - prevalence of undernourishment (SN_ITK_DEFC)
+
+- Prevalence of moderate or severe food insecurity... (47)
+
+  - Severe food insecurity % (AG_PRD_FIESS)
+
+  - Severe food insecurity n (AG_PRD_FIESSN)
+
+  - Moderate or severe food insecurity n (AG_PRD_FIESMSN)
+
+  - Moderate or severe food insecurity % (AG_PRD_FIESMS)
+
+- Prevalence of malnutrition (49)
+
+  - Children moderately or severely wasted n (SH_STA_WASTN)
+
+  - Children moderately or severely wasted % (SH_STA_WAST)
+
+  - Children moderately or severely overweight n (SN_STA_OVWGTN)
+
+  - Children moderately or severely overweight % (SN_STA_OVWGT)
+
+Note: I think it would be helpful to explain the differences between all of these terms
+
+- Malnutrition: deficiencies, excesses, or imbalances in a person’s intake of energy and/or nutrients.
+
+- Food insecurity: when people lack secure access to sufficient amounts of safe and nutritious food for normal growth and development and an active and healthy life.
+
+- Undernourishment: people whose dietary energy consumption is continuously below a minimum dietary energy requirement for maintaining a healthy life and carrying out a light physical activity
+
+```{r}
+#| echo: false
+#| include: false
+codes <- c("SN_STA_OVWGT", "SN_STA_OVWGTN", "SH_STA_WAST", "SH_STA_WASTN", "AG_PRD_FIESMSN", "AG_PRD_FIESMS", "AG_PRD_FIESSN", "SN_ITK_DEFC", "AG_PRD_FIESS", "SN_ITK_DEFCN")
+
+datasets <- list()
+
+for (code in codes) {
+    ds <- getHRDx(code, offline = TRUE, raw = here("data/raw/rightToFood"))
+
+    datasets[[code]] <- ds
+
+    #write.csv(ds, here(paste0("data/raw/rightToFood/", code, ".csv")))
+}
+```
+
+# Undernourishment
+
+```{r}
+#| echo: false
+#| include: false
+undernourish_prev <- datasets[["SN_ITK_DEFC"]] |>
+mutate(year = year(datetime))
+
+colnames(undernourish_prev) # no disaggs ??
+
+table(year(undernourish_prev$datetime)) # data coverage declines in 2024
+
+table(undernourish_prev$regionId) # but there are global figures already in the data
+```
+
+```{r undernourish-world}
+undernourish_prev |> 
+filter(regionId == 1) |>
+ggplot(aes(x = year, y = value)) + 
+geom_line(color = "#006fb7") + 
+scale_y_continuous("Prevalence of undernourishment", limits = c(0, 15), 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid()
+```
+
+```{r undernourish-regions}
+main <- c("Africa", "Asia", "Americas", "Europe", "Oceania")
+undernourish_prev |>
+left_join(regions |> drop_na(), by = c("regionId" = "id")) |>
+filter(level == 1) |> 
+ggplot(aes(x = year, y = value)) +
+geom_line(aes(color = name)) + 
+scale_color_ghro("region") + 
+scale_y_continuous("Prevalence of undernourishment", limits = c(0, 25), 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) +  
+theme_minimal_grid()
+```
+
+1.  No data for Europe?
+2.  Asia saw a jump in 2020, but is declining now
+3.  Africa is on a concerning increase, reaching above 20%, a new high since 2010
+
+```{r}
+#| echo: false
+#| include: false
+undernourish_num <- datasets[["SN_ITK_DEFCN"]] |>
+mutate(year = year(datetime))
+
+eda(undernourish_num, detailed = TRUE)
+```
+
+```{r undernourish-n-world}
+undernourish_num |>
+filter(regionId == 1) |>
+arrange(year) |>
+ggplot(aes(x = year)) + 
+geom_line(aes(y = value/1000000), color = "#006fb7") +
+scale_y_continuous("Number undernourished, millions of people",  
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid()
+
+# prop undernourished globally, manual calculation w unpop numbers
+pop2024 <- read.csv(here(raw, "/worldpop.csv")) |> filter(Time == 2024) |> pull(Value)
+
+undernourish2024 <- undernourish_num |> filter(year == 2024, regionId == 1) |> pull(value)
+
+undernourish2024/pop2024
+```
+
+1.  673.2 million people were undernourished in 2024.
+2.  This means that about 1 in a dozen people globally do not have access to food sufficient to maintain a healthy life.
+3.  Worst was 2021, but slowly declining in post-pandemic era
+
+# Food insecurity
+
+```{r sev-fi-world}
+sev <- datasets[["AG_PRD_FIESS"]] |> mutate(year = year(datetime))
+modsev <- datasets[["AG_PRD_FIESMS"]] |> mutate(year = year(datetime))
+
+sev_world <- sev |> filter(regionId == 1, ageCode == "_T", dwellingUrbanisationCode == "_T")
+
+sev_world |> 
+ggplot(aes(x = year, y = value)) + 
+geom_line(color = "#006fb7") +
+scale_y_continuous("Prevalence of severe food insecurity", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid()
+```
+
+1.  Same trend with pandemic - still at all time high
+2.  1/10 of world in severe
+
+```{r modsev-fi-world}
+modsev_world <- modsev |> filter(regionId == 1, ageCode == "_T", dwellingUrbanisationCode == "_T")
+
+modsev_world |>
+ggplot(aes(x = year, y = value)) + 
+geom_line(color = "#006fb7") +
+scale_y_continuous("Prevalence of moderate or severe food insecurity", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid()
+```
+
+Maybe show them together?
+
+Reference for showing just moderate: <https://www.fao.org/interactive/state-of-food-security-nutrition/en/>
+
+```{r fi-world}
+#| fig-width: 8
+#| fig-height: 6
+food_insecurity_world <- rbind(modsev_world |> mutate(type = "Moderate or severe"), sev_world |> mutate(type = "Severe")) |> select(value, year, type) |> pivot_wider(names_from = type, values_from = value) |> 
+mutate(Moderate = `Moderate or severe` - Severe) |>
+pivot_longer(c("Severe", "Moderate")) |>
+mutate(lab = ifelse(name == "Moderate", `Moderate or severe`, value))
+
+food_insecurity_world |>
+ggplot(aes(x = year, y = value)) + 
+geom_col(aes(fill = name)) +
+scale_fill_manual("Level of food insecurity", values = c("Severe" = "#D7191C", "Moderate" = "#FDAE61")) +
+geom_text(aes(y = lab - 1, label = scales::percent(value, accuracy = .1, scale = 1), color = name), size = 4) +
+scale_color_manual(values = c("Severe" = "white", "Moderate" = "black"), guide = "none") +
+scale_y_continuous("Prevalence of food insecurity", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_hgrid() + 
+theme(legend.position = "top")
+```
+
+1.  While prevalence of moderate or severe food insecurity is lower than it's been since 2019, it is still much higher than it's been in this indicator's history.
+
+```{r sev-fi-regions}
+sev_regions <- sev |> 
+filter(!is.na(regionId), ageCode == "_T", dwellingUrbanisationCode == "_T") |>
+left_join(regions, by = c("regionId" = "id"))
+
+labs <- sev_regions |> filter(year == 2024, level == 1) 
+
+sev_regions |> 
+filter(level == 1) |> 
+ggplot(aes(x = year, y = value)) +
+geom_line(aes(color = name)) +
+ggrepel::geom_text_repel(data = labs, aes(y = value, label = paste0(name, "\n", scales::percent(value, scale = 1, accuracy = .1)), color = name), hjust = 0, xlim = c(2024, Inf)) +
+scale_color_ghro("region") +
+guides(color = "none") + scale_y_continuous("Prevalence of severe food insecurity", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid() +
+theme(plot.margin = margin(r = 40)) +
+coord_cartesian(clip = "off")
+```
+
+1.  Breaking it down by region shows that the decline in severe food insecurity is driven by decreases in the Americas and Asia.
+2.  However, people in Africa are more than twice as likely to be in severe food insecurity compared to any other region.
+3.  This trend does not seem to be improving, and is instead worsening, reaching 22.7% in 2024.
+
+```{r sev-fi-africa}
+sev_africa <- sev_regions |> filter(parentId %in% c(2, 202), year == 2024, name != "Sub-Saharan Africa")
+
+sev_africa |> 
+ggplot(aes(y = fct_reorder(name, value), x = value)) + 
+geom_col(fill = "#006fb7") + 
+scale_x_continuous("Prevalence of severe food insecurity, 2024", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_y_discrete(NULL) + 
+theme_minimal_vgrid() + 
+theme(plot.margin = margin(l = 50)) 
+```
+
+1.  Looking at sub-regions of Africa, this trend is largely driven by Middle Africa, where nearly 2 in 5 people live in severe food insecurity.
+
+```{r modsev-fi-regions}
+modsev_regions <- modsev |> 
+filter(!is.na(regionId), ageCode == "_T", dwellingUrbanisationCode == "_T") |>
+left_join(regions, by = c("regionId" = "id")) |> 
+mutate(year = year(datetime))
+
+labs <- modsev_regions |> filter(year == 2024, level == 1) 
+
+modsev_regions |> 
+filter(level == 1) |> 
+ggplot(aes(x = year, y = value)) +
+geom_line(aes(color = name)) +
+ggrepel::geom_text_repel(data = labs, aes(y = value, label = paste0(name, "\n", scales::percent(value, scale = 1, accuracy = .1)), color = name), hjust = 0, xlim = c(2024, Inf)) +
+scale_color_ghro("region") +
+guides(color = "none") + scale_y_continuous("Prevalence of moderate or severe food insecurity", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid() +
+theme(plot.margin = margin(r = 40)) +
+coord_cartesian(clip = "off")
+```
+
+1.  In Africa, 3 in 5 live in moderate or severe food insecurity
+
+```{r loc-fi}
+du_sev <- sev |> filter(dwellingUrbanisationCode != "_T", regionId == 1, year == 2024) |>
+mutate(type = "Severe")
+
+du_modsev <- modsev |> filter(dwellingUrbanisationCode != "_T", regionId == 1, year == 2024) |>
+mutate(type = "Moderate or severe")
+
+key <- getHRDx("dwellingUrbanisation") |> select(code, name) |> rename(dwellingUrbanisationCode = code, location = name)
+
+food_insecurity_du <- rbind(du_sev, du_modsev) |> select(value, type, dwellingUrbanisationCode) |> pivot_wider(names_from = type, values_from = value) |> 
+mutate(Moderate = `Moderate or severe` - Severe) |>
+pivot_longer(c("Severe", "Moderate")) |>
+mutate(lab = ifelse(name == "Moderate", `Moderate or severe`, value)) |>
+left_join(key, by = "dwellingUrbanisationCode")
+
+food_insecurity_du |>
+ggplot(aes(y = fct_reorder(str_wrap(location, 25), value), x = value)) + 
+geom_col(aes(fill = name)) +
+scale_fill_manual("Level of food insecurity", values = c("Severe" = "#D7191C", "Moderate" = "#FDAE61")) +
+geom_text(aes(x = lab - .1, label = scales::percent(value, accuracy = .1, scale = 1), color = name), size = 4, hjust = 1) +
+scale_color_manual(values = c("Severe" = "white", "Moderate" = "black"), guide = "none") +
+scale_x_continuous("Prevalence of food insecurity among those 15 and older", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_y_discrete(NULL) + 
+theme_minimal_vgrid() + 
+theme(legend.position = "top") 
+```
+
+1.  Food insecurity is most prevalent in rural areas
+
+```{r sex-fi}
+sev_sex <- sev |> 
+filter(regionId == 1, sexCode != "_T", year == 2024) |>
+mutate(type = "Severe")
+
+modsev_sex <- modsev |> 
+filter(regionId == 1, sexCode != "_T", year == 2024) |>
+mutate(type = "Moderate or severe")
+
+food_insecurity_sex <- rbind(modsev_sex, sev_sex) |> select(value, year, type, sexCode) |> pivot_wider(names_from = type, values_from = value) |> 
+mutate(Moderate = `Moderate or severe` - Severe) |>
+pivot_longer(c("Severe", "Moderate"), names_to = "type") |>
+mutate(lab = ifelse(type == "Moderate", `Moderate or severe`, value))
+
+food_insecurity_sex |> 
+ggplot(aes(y = fct_reorder(str_wrap(sexCode, 25), value), x = value)) + 
+geom_col(aes(fill = type)) +
+scale_fill_manual("Level of food insecurity", values = c("Severe" = "#D7191C", "Moderate" = "#FDAE61")) +
+geom_text(aes(x = lab - .1, label = scales::percent(value, accuracy = .1, scale = 1), color = type), size = 4, hjust = 1) +
+scale_color_manual(values = c("Severe" = "white", "Moderate" = "black"), guide = "none") +
+scale_x_continuous("Prevalence of food insecurity among those 15 and older", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_y_discrete(NULL, labels = c("F" = "Female", "M" = "Male")) + 
+theme_minimal_vgrid() + 
+theme(legend.position = "top") 
+```
+
+# Malnutrition
+
+```{r}
+wasting <- datasets[["SH_STA_WAST"]] |>
+mutate(year = year(datetime))
+
+wasting_world <- wasting |>
+filter(regionId == 1)
+```
+
+```{r wasting-world}
+wasting_world |>
+ggplot(aes(x = year, y = value)) + 
+geom_line(color = "#006fb7") +
+scale_y_continuous("Prevalence of wasting among children under 5",  
+                   labels = 
+             scales::percent_format(scale = 1), 
+                   limits = c(0, 15), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid()
+```
+
+1.  Globally since 2010, improvement of 1.1% (not a huge change)
+
+```{r wasting-regions}
+wasting_regions <- wasting |> filter(!is.na(regionId)) |> left_join(regions, by = c("regionId" = "id")) |> filter(level == 2) |> left_join(regions |> select(id, name) |> rename(parent_name = name), by = c("parentId" = "id"))
+
+wasting_regions |> 
+filter(year == max(year)) |> 
+ggplot(aes(y = fct_reorder(name, value), x = value)) +
+geom_col(aes(fill = parent_name)) + 
+geom_text(aes(x = value + .1, label = scales::percent(value, accuracy = .1, scale = 1)), size = 3.5, hjust = 0) +
+scale_fill_ghro("region") + 
+scale_x_continuous("Prevalence of wasting among children under 5, 2024", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_y_discrete(NULL) + 
+theme_minimal_vgrid() + 
+theme(legend.position = "top", plot.margin = margin(l = 30, r = 30)) + 
+coord_cartesian(clip = "off")
+```
+
+1.  regional values range from .2 in northern america, to 13.6% in southern asia (nearly double South-eastern Asia, the next highest regional value), but this is on a consistent downwards trend
+2.  No data for a good amount of Oceania, hence only Australia and New Zealand
+
+```{r, include = FALSE}
+wasting_regions |> filter(name == "Southern Asia") |> select(year, value) |> arrange(year)
+
+wasting |> 
+filter(is.na(regionId)) |>
+left_join(countries, by = c("countryId" = "id")) |> filter(level1 == 9) |> filter(year > 2022)
+```
+
+```{r overwt-world}
+overwt <- datasets[["SN_STA_OVWGT"]] |> mutate(year = year(datetime))
+
+overwt_world <- overwt |> filter(regionId == 1, sexCode == "_T")
+
+overwt_world |>
+ggplot(aes(x = year, y = value)) + 
+geom_line(color = "#006fb7") +
+scale_y_continuous("Prevalence of overweight among children under 5",  
+                   labels = 
+             scales::percent_format(scale = 1), 
+                   limits = c(0, 10), 
+                   expand = c(0, 0)) + 
+scale_x_continuous(NULL) + 
+theme_minimal_grid()
+```
+
+1.  Mostly stagnant, but small increase since 2019 (2024 = highest since 2010)
+
+```{r overwt-regions}
+#| fig-height: 6
+#| fig-width: 7
+overwt_regions <- overwt |> filter(!is.na(regionId), year == 2024, sexCode == "_T") |> left_join(regions |> select(id, name, level, parentId), by = c("regionId" = "id")) |> filter(level == 2) |> left_join(regions |> select(id, name) |> rename(parent_name = name), by = c("parentId" = "id"))
+
+global_val <- overwt_world |> filter(year == 2024) |> pull(value)
+
+overwt_regions |> ggplot(aes(y = fct_reorder(str_wrap(name, 20), value), x = value)) +
+geom_col(aes(fill = parent_name)) + 
+geom_text(aes(x = value + .1, label = scales::percent(value, accuracy = .1, scale = 1)), size = 3.5, hjust = 0) +
+geom_vline(xintercept = global_val, linetype = "dashed", color = "grey40") + 
+scale_fill_ghro("region") + 
+scale_x_continuous("Prevalence of overweight among children under 5, 2024", 
+                   labels = scales::percent_format(scale = 1), 
+                   expand = c(0, 0)) + 
+scale_y_discrete(NULL) + 
+theme_minimal_vgrid() + 
+theme(legend.position = "top", plot.margin = margin(l = 30, r = 30)) + 
+coord_cartesian(clip = "off")
+```
