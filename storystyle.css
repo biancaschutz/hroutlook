@@ -1,0 +1,58 @@
+html {
+    scroll-snap-type: y proximity;
+    overflow-x: clip;
+}
+
+.scrolly-text-container {
+    pointer-events: none;
+}
+
+.scrolly-text {
+    pointer-events: auto;
+}
+
+.intro-card {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    scroll-margin-top: 60svh;
+    transition: opacity 0.2s linear, transform 0.2s linear;
+    opacity: var(--card-opacity, 0);
+    transform: scale(var(--card-scale, 0.9));
+    will-change: opacity, transform;
+}
+
+.story-nav#toc a {
+    color: black;
+    text-decoration: none;
+    font-size: 1.125rem;
+}
+
+.story-nav#toc ul.toc li.active {
+    border-left: 0.5rem solid #3365b3;
+}
+
+.story-nav#toc ul.toc {
+    list-style-type: none;
+    /* Remove bullets */
+    margin: 0rem;
+    padding: 0rem;
+}
+
+.story-nav#toc ul.toc li {
+    border-left: 0.5rem solid #eb8872;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease-out;
+}
+
+.story-nav#toc ul.toc li:hover {
+    border-left: 0.5rem solid #3365b3;
+    background-color: #3365b366;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.story-nav#toc ul.toc li::before {
+    display: inline-block;
+    width: 1em;
+}
