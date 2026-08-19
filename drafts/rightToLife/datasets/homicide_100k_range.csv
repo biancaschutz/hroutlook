@@ -1,7 +1,3 @@
-"name","highlight","2000","2024","incdec"
-"Africa","N",13.57,10.51,"decreased"
-"World","Y",6.9,5.14,"decreased"
-"Americas","N",15.69,13.97,"decreased"
-"Asia","N",3.33,1.98,"decreased"
-"Oceania","N",3.08,3.01,"decreased"
-"Europe","N",7.77,2.4,"decreased"
+"year","Oceania","Europe","Asia","Americas","World","Africa"
+2010,2.89,3.49,2.67,16.79,6.11,12.29
+2024,3.01,2.4,1.98,13.97,5.14,10.51

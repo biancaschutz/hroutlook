@@ -1,0 +1,113 @@
+---
+title: "Right to a fair trial"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+include-in-header:
+  - text: |
+      <style>
+      .cell-output-stdout code {
+        word-break: break-wor !important;
+        white-space: pre-wrap !important;
+      }
+      </style>
+---
+
+```{r setup}
+#| echo: false
+library(ghRo)
+library(tidyverse)
+library(here)
+library(ggforce)
+library(scales)
+library(cowplot)
+library(ggtext)
+
+raw <- here("data/raw/")
+
+dir.create(here("drafts/rightToFairTrial/datasets"), recursive = TRUE, showWarnings = FALSE)
+
+out <- here("drafts/rightToFairTrial/datasets/")
+```
+
+```{r}
+regionIds <- regions |> filter(level %in% 0:1)
+unsentenced <- getHRDx("VC_PRS_UNSNT", params = list(where = list(datetime = select_years(years = 2010:2026)), regionId = regionIds))
+
+# eda(unsentenced, detailed = TRUE)
+```
+
+```{r}
+library(waffle)
+library(magrittr)
+library(showtext)
+font_add(
+    family = "FontAwesome5Free-Solid",
+    regular = system.file("fonts", "fa-solid-900.ttf", package = "waffle")
+)
+showtext_auto()
+
+unsent <- data.frame(name = c("sentenced", "unsentenced"), value = c(7, 3))
+
+unsent |> 
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 35
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "sentenced" = "user",
+            "unsentenced" = "user"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "unsentenced" = "#006fb7",
+            "sentenced" = "#f5f5f1"
+        )
+    ) +
+    coord_equal(clip = "off") +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.9, 1.5))
+```
+
+
+1. % of prison population that is unsentenced has been increasing since 2010, was decreasing between 2016 and 2019, but then spiked to an all time high in 2021 of 31.7%, meaning that more than 3 in 10 inmates globally were unsentenced. Since 2021 it has declined, but remains above 30%.
+
+```{r}
+ghro_line("VC_PRS_UNSNT", level = "regional", line_args = list(linewidth = .75), theme_args = list(font_size = 28), region_label_size = 9) + theme(plot.margin = margin(r = 50))
+```
+
+2. Increase was most obvious in Oceania, highest in the world now
+
+```{r}
+ghro_region_bar("VC_PRS_UNSNT", theme_args = list(font_size = 28))
+```
+
+1. Nearly 40% in Oceania
+
+Gendered differences? 
+```{r}
+unsentenced |>
+filter(sexCode != "_T", datetime == max(datetime)) |> 
+inner_join(regions |> filter(level == 1), by = "regionId") |>
+ggplot(aes(x = value, y = fct_reorder(name, value))) + 
+geom_line(aes(group = name), linewidth = .75) +
+geom_point(aes(color = sexCode), size = 5) + 
+scale_color_ghro("gender", name = NULL, labels = c("F" = "Female", "M" = "Male")) + 
+theme_ghro_bar(orientation = "horizontal", font_size = 28) +
+theme(legend.position = "top") +
+scale_x_continuous("% of prison population that is unsentenced", labels = scales::percent_format(scale = 1))
+```
+
+1. Gender gap is large in Oceania and Africa - in both regions, women are about 1/4 more likely to be unsentenced than men

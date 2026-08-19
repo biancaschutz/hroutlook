@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+
+<head>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <style>
+        .body {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id='grid-container'>
+        <div id='grid-chart'></div>
+    </div>
+</body>
+<script>
+
+    const margin = {
+left: 40,
+right: 40
+    };
+
+    var hrdsPictogram = function (data) {
+
+        d3.select("#grid-chart svg").remove();
+
+        const containerWidth = document.getElementById("grid-chart").clientWidth;
+        const cols = window.innerWidth < 991 ? 5 : 10;
+
+        const innerWidth = containerWidth - margin.left - margin.right;
+
+        const maxIcons = d3.max(data, d => d.kil + d.edis);
+        const maxRows = Math.ceil(maxIcons / cols);
+
+        
+        // space available for all groups
+        const chartWidth = innerWidth * 0.9;
+
+
+        // Size of each icon based on width
+        const iconSize = chartWidth / (cols * data.length);
+
+        // Height driven by data
+        const height = maxRows * iconSize;
+        const width = containerWidth;
+
+        // Spacing 
+
+        const maxBarWidth = cols * iconSize;
+
+        // spacing between groups
+        const yearSpacing = chartWidth / data.length;
+
+        const gap = iconSize * 2; // space between bars
+
+        const totalWidth =
+            data.length * maxBarWidth +
+            (data.length - 1) * gap;
+
+        const startX = (width - totalWidth) / 2;
+
+        const svg = d3.select("#grid-chart")
+            .append("svg")
+            .attr("width", "100%")
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .attr("preserveAspectRatio", "xMidYMin meet");
+
+        const kilColor = "#adf7b6";
+        const edisColor = "#4D908E";
+
+        const defs = svg.append("defs");
+
+        defs.append("symbol")
+            .attr("id", "person")
+            .attr("viewBox", "0 0 24 24")
+            .html(`
+            <circle cx="12" cy="7" r="4"></circle>
+            <path d="
+                M12 13
+                C8 13 5 16 5 20
+                L19 20
+                C19 16 16 13 12 13Z">
+            </path>
+        `);
+
+        function buildIcons(row) {
+
+            const icons = [];
+            for (let i = 0; i < row.edis; i++) {
+                icons.push({
+                    category: "edis",
+                    color: edisColor
+                });
+            }
+
+            for (let i = 0; i < row.kil; i++) {
+                icons.push({
+                    category: "kil",
+                    color: kilColor
+                });
+            }
+
+            return icons;
+        }
+
+        const bars = svg
+            .selectAll(".bar")
+            .data(data)
+            .enter()
+            .append("g")
+            .attr("class", "bar")
+            .attr("transform", (d, i) =>
+                `translate(${startX + i * (maxBarWidth + gap)}, 0)`
+            );
+        bars.each(function (row) {
+
+            const icons = buildIcons(row);
+
+            const rows = Math.ceil(icons.length / cols);
+
+
+            d3.select(this)
+                .selectAll(".person")
+                .data(icons)
+                .enter()
+                .append("use")
+                .attr("href", "#person")
+                .attr("width", iconSize)
+                .attr("height", iconSize)
+
+                .attr("x", (d, i) =>
+                    (i % cols) * iconSize
+                )
+                .attr("y", (d, i) =>
+                    Math.floor(i / cols) * iconSize)
+
+                .attr("fill", d => d.color);
+        });
+
+    }
+
+    d3.csv("https://raw.githubusercontent.com/biancaschutz/hroutlook/refs/heads/main/drafts/rightToFreedomOfExpression/datasets/d3_pictogram_FOE.csv", function (data) {
+
+        data.forEach(function (d) {
+            d.kil = +d.kil;
+            d.edis = +d.edis;
+        });
+
+        hrdsPictogram(data);
+
+        window.addEventListener("resize", function () {
+            hrdsPictogram(data);
+        });
+    });
+</script>
+
+</html>

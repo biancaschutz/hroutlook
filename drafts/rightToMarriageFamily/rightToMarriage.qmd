@@ -1,0 +1,191 @@
+---
+title: "Right to marriage and family"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+include-in-header:
+  - text: |
+      <style>
+      .cell-output-stdout code {
+        word-break: break-wor !important;
+        white-space: pre-wrap !important;
+      }
+      </style>
+---
+
+```{r setup}
+#| echo: false
+library(ghRo)
+library(tidyverse)
+library(here)
+library(ggforce)
+library(scales)
+library(cowplot)
+library(ggtext)
+
+raw <- here("data/raw/")
+
+dir.create(here("drafts/rightToMarriageFamily/datasets"), recursive = TRUE, showWarnings = FALSE)
+
+out <- here("drafts/rightToMarriageFamily/datasets/")
+```
+
+Indicators: 
+
+- Proportion of women aged 20-24 years who were married or in a union before age 15 and before age 18 (SP_DYN_MRBF15, SP_DYN_MRBF18)
+- Proportion of ever-partnered women and girls aged 15 years and older subjected to physical, sexual or psychological violence by a current or former intimate partner in the previous 12 months, by form of violence and by age (VC_VAW_MARR)
+- Proportion of time spent on unpaid domestic and care work, by sex, age and location (SL_DOM_TSPD) 
+
+
+```{r}
+mrbf <- paste0("SP_DYN_MRBF", c(15, 18))
+
+# for (m in mrbf) {
+#     eda(getHRDx(m), detailed = T)
+# }
+
+mrbf_df <- list()
+
+for (m in mrbf) {
+    mrbf_df[[m]] <- getHRDx(m) |> select(datasetCode, countryId, regionId, datetime, value)
+}
+
+child_marriage <- bind_rows(mrbf_df)
+```
+
+```{r}
+key <- data.frame(datasetCode = paste0("SP_DYN_MRBF", c(15, 18)), age = paste0("Married ", c("by age 15", "by age 18")))
+global_cm <- child_marriage |> filter(regionId == 1) |> left_join(key)
+```
+
+In 2025, nearly 1 in 5 women ages 20-24 were married before the age of 18. 25% of those women were married before the age of 15. 
+
+```{r}
+global_cm |>
+filter(year(datetime) %in% c(2015, 2025)) |>
+ggplot(aes(x = year(datetime), y = value, color = age)) + 
+geom_line() + 
+geom_point() +
+geom_text(aes(y = value + 1.25, label = scales::percent(value, accuracy = .1, scale = 1)), show.legend = FALSE) +
+scale_y_continuous("% of women aged 20 to 24", labels = scales::percent_format(scale = 1)) +
+scale_color_ghro("cats2", name = NULL) +
+theme_ghro_line(font_size = 28) + 
+scale_x_continuous(NULL, breaks = c(2015, 2025), expand = expansion(add = 1)) + 
+theme(legend.position = "top", legend.direction="vertical")
+```
+
+Both have decreased in the past 10 years. 
+
+```{r}
+#| fig-height: 2
+library(waffle)
+library(magrittr)
+library(showtext)
+font_add(
+    family = "FontAwesome5Free-Solid",
+    regular = system.file("fonts", "fa-solid-900.ttf", package = "waffle")
+)
+showtext_auto()
+
+cm_18 <- data.frame(name = c("married", "unmarried"), value = c(2, 8))
+
+cm_18 |> 
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 50
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "married" = "female",
+            "unsentenced" = "female"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "married" = ghro_palettes$cats2[2],
+            "unmarried" = "#f5f5f1"
+        )
+    ) + 
+    coord_equal(clip = "off") +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.9, 1.5))
+```
+
+```{r}
+#| fig-height: 8
+child_marriage |> filter(!is.na(regionId), regionId != 1, year(datetime) == 2025) |> left_join(key) |> left_join(regions) |> left_join(regions |> mutate(regionId = as.integer(regionId)) |> select(name, regionId) |> rename(parent = name), by = c("parentId" = "regionId")) |>
+ggplot(aes(x = value, y = fct_reorder(str_wrap(name, 25), value))) + 
+geom_col(aes(fill = parent)) + 
+scale_fill_ghro("regions", name = "M49 region") +
+facet_wrap(~ age, ncol = 1) + 
+theme_ghro_bar("horizontal", font_size = 28) + 
+theme(axis.text = element_text(lineheight = .5))
+```
+
+In Sub-Saharan Africa, 3 in 10 women are married by age 18. The rate in Southern Asia is also higher than the global average. 
+
+```{r}
+wviolence <- getHRDx("VC_VAW_MARR")
+```
+
+```{r}
+#| fig-height: 2
+
+wviolence |> filter(regionId == 1, ageCode == "Y15T49", datetime == max(datetime)) |> pull(value)
+
+vaw_global <- data.frame(name = c("v", "n"), value = c(1, 9))
+
+vaw_global |> 
+    ggplot(aes(label = name, values = value)) +
+    geom_pictogram(
+        aes(colour = name),
+        family = "FontAwesome5Free-Solid",
+        n_rows = 1,
+        size = 50
+    ) +
+    scale_label_pictogram(
+        name = NULL,
+        values = c(
+            "v" = "female",
+            "n" = "female"
+        )
+    ) +
+    scale_color_manual(
+        values = c(
+            "v" = "#faa31b",
+            "n" = "#f5f5f1"
+        )
+    ) + 
+    coord_equal(clip = "off") +
+    theme_void() +
+    theme(legend.position = "none") +
+    scale_y_continuous(limits = c(.9, 1.5))
+```
+
+1 in 4 women have experienced intimate partner violence. (https://databank.worldbank.org/source/gender-statistics, "proportion of women who have ever experienced IPV" 2023 global aggregate)
+
+Link to non-discrimination? There is indicator about legal frameworks protecting marriage and family gender equality
+
+```{r}
+wviolence |> filter(regionId == 1) |> select(ageCode, datetime, value) |> arrange(datetime) |> group_by(ageCode) |> mutate(old = lag(value), change = (value - old) / old)
+```
+
+15% increase from 9.9% to 11.4%, 2018-2023. 
+
+```{r}
+wviolence |> filter(!is.na(regionId), regionId != 1, datetime == max(datetime), ageCode == "Y_GE15") |> select(regionId, datetime, value) |> left_join(regions) |> left_join(regions |> mutate(regionId = as.integer(regionId)) |> select(name, regionId) |> rename(parent = name), by = c("parentId" = "regionId")) |> filter(parentId != 1) |>
+ggplot(aes(x = value, y = fct_reorder(str_wrap(name, 25), value))) + 
+geom_col(aes(fill = parent)) + 
+scale_fill_ghro("regions", name = "M49 region") + 
+theme_ghro_bar("horizontal")
+```

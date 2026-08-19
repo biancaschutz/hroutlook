@@ -1,0 +1,116 @@
+---
+title: "Right to freedom from torture"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+include-in-header:
+  - text: |
+      <style>
+      .cell-output-stdout code {
+        word-break: break-wor !important;
+        white-space: pre-wrap !important;
+      }
+      </style>
+---
+
+```{r setup}
+#| echo: false
+library(ghRo)
+library(tidyverse)
+library(here)
+library(ggforce)
+library(scales)
+library(cowplot)
+library(ggtext)
+
+raw <- here("data/raw/")
+
+dir.create(here("drafts/freedomFromTorture/datasets"), recursive = TRUE, showWarnings = FALSE)
+
+out <- here("drafts/freedomFromTorture/datasets/")
+```
+
+Indicators:
+
+16.1.3:
+
+- physical violence (VC_VOV_PHYL)
+
+- psychological violence (VC_VOV_PSYCHL)
+
+- sexual violence (VC_VOV_SEXL)
+
+In the SDG report, UNODC used most recent data since 2015 for each country, so doing this
+```{r}
+sdg16.1.3 <- c("VC_VOV_PHYL", "VC_VOV_PSYCHL", "VC_VOV_SEXL")
+
+most_recent <- list()
+for (code in sdg16.1.3) {
+    most_recent[[code]] <- getHRDx(code) |> 
+    filter(sexCode != "_T", year(datetime) > 2015) |>
+    group_by(countryId) |> 
+    filter(datetime == max(datetime)) |> 
+    ungroup() |>
+    left_join(countries) |>
+    select(datetime, value, countryId, name, sexCode, iso3) |>
+    pivot_wider(names_from = "sexCode", values_from = "value")
+}
+
+F <- unname(sapply(most_recent, function(x) {mean(x$F, na.rm = T)}))
+M <- unname(sapply(most_recent, function(x) {mean(x$M, na.rm = T)}))
+
+data.frame(F, M, type = c("Physical violence", "Psychological violence", "Sexual violence")) |> 
+pivot_longer(c(F, M)) |>
+ggplot(aes(y = forcats::fct_reorder(type, value), x = value, fill = name)) + 
+geom_col(position = "dodge") + 
+scale_fill_ghro("gender", name = NULL, labels = c("F" = "Female", "M" = "Male")) +
+theme_ghro_bar("horizontal") + 
+scale_x_continuous("prevalence of violence (% of population)", expand = c(0, 0), labels = scales::percent_format(scale = 1))
+```
+
+
+```{r}
+most_recent <- list()
+for (code in sdg16.1.3) {
+    most_recent[[code]] <- getHRDx(code) |> 
+    filter(sexCode == "_T", year(datetime) > 2015) |>
+    group_by(countryId) |> 
+    filter(datetime == max(datetime)) |> 
+    ungroup() |>
+    left_join(countries) |>
+    select(datetime, value, countryId, name, sexCode, iso3)
+}
+
+sapply(most_recent, function(x) {mean(x$value, na.rm = T)})
+```
+
+More than 1 in 10 people have suffered psychological violence globally
+
+```{r}
+#| echo: false
+cat("The data on physical violence represents", scales::percent((read.csv(paste0(raw, "/unpop2000.csv")) |> right_join(most_recent[[1]] |> mutate(Time = year(datetime)), by = c("Time", "Iso3" = "iso3")) |> summarize(s = sum(Value)) |> pull(s))[1] / (read.csv(paste0(raw, "/worldpop.csv")) |> filter(Time == 2024) |> pull(Value))[1]), "of the world population\n")
+cat("The data on psychological violence represents", scales::percent((read.csv(paste0(raw, "/unpop2000.csv")) |> right_join(most_recent[[2]] |> mutate(Time = year(datetime)), by = c("Time", "Iso3" = "iso3")) |> summarize(s = sum(Value)) |> pull(s))[1] / (read.csv(paste0(raw, "/worldpop.csv")) |> filter(Time == 2024) |> pull(Value))[1]), "of the world population")
+cat("The data on sexual violence represents", scales::percent((read.csv(paste0(raw, "/unpop2000.csv")) |> right_join(most_recent[[3]] |> mutate(Time = year(datetime)), by = c("Time", "Iso3" = "iso3")) |> summarize(s = sum(Value)) |> pull(s))[1] / (read.csv(paste0(raw, "/worldpop.csv")) |> filter(Time == 2024) |> pull(Value))[1]), "of the world population")
+```
+
+data coverage by year...
+
+```{r}
+i <- 1
+types <- c("physical violence", "psychological violence", "sexual violence")
+for (ds in most_recent) {
+    avail <- ds |> group_by(datetime) |> count() |> mutate(year = year(datetime)) |> ungroup() |> select(year, n)
+        cat("For", types[[i]], "this is the data availability by year, with a total of", sum(avail$n), "countries with data:\n")
+
+    print(avail)
+    cat("\n")
+    i <- i + 1
+}
+```
+
+This graph was created by using the most recent data value for each country, if that value is 2016 or more recent (last 10 years). As you can see, for all datasets, a majority of the data is 2020 or more recent. 

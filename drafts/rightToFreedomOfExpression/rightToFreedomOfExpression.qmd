@@ -18,12 +18,13 @@ library(here)
 library(ggforce)
 library(scales)
 library(cowplot)
+library(ggtext)
 
 raw <- here("data/raw/")
 
 dir.create(here("drafts/rightToFreedomOfExpression/datasets"), recursive = TRUE, showWarnings = FALSE)
 
-out <- here("drafts/rightToFreedomOfExpression/datasets")
+out <- here("drafts/rightToFreedomOfExpression/datasets/")
 ```
 
 Indicators:
@@ -46,10 +47,48 @@ In the below linked report, for 2025 they say this is "141 UN Member States that
 
 So 141 of 193 member states - maybe can do a half donut. 
 
-https://unesdoc.unesco.org/in/documentViewer.xhtml?v=2.1.196&id=p::usmarcdef_0000398030&highlight=public%20access%20to%20information&file=/in/rest/annotationSVC/DownloadWatermarkedAttachment/attach_import_c6ad0f0c-5a28-4a66-a11d-ab0a4aa3b6e0%3F_%3D398030eng.pdf&locale=en&multi=true&ark=/ark:/48223/pf0000398030/PDF/398030eng.pdf#%5B%7B%22num%22%3A18%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D
+```{r}
+data.frame(count = c(141, 193-141), cat = c("yes", "no")) |>
+mutate(share = count/sum(count)) |>
+mutate(name = factor(cat), 
+ymax = cumsum(share), 
+ymin = c(0, head(ymax, n= -1))) |>
+  mutate_at(vars(starts_with("y")), rescale, to=pi*c(-.5,.5), from=0:1) %>%
+  ggplot + 
+  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = .5, r = 1, start = ymin, end = ymax, fill=name)) + 
+  scale_fill_manual(values = c("yes" = "#006fb7", "no" = "#cccccc"), guide = "none") +
+ggtitle(paste0("In 2024, <b style = 'color:#006fb7;'> 141 countries </b> have adopted constitutional, statutory and/or policy guarantees for public access to information.")) +
+  coord_fixed() + 
+    theme_nothing() +
+    theme(legend.position = "bottom", 
+    plot.title = element_textbox_simple(padding = margin(5.5, 5.5, 5.5, 5.5),
+    margin = margin(0, 0, 10, 0),
+    lineheight = 1, 
+    size = 28
+))
+```
+
+[See the 2025 UNESCO report](https://unesdoc.unesco.org/in/documentViewer.xhtml?v=2.1.196&id=p::usmarcdef_0000398030&highlight=public%20access%20to%20information&file=/in/rest/annotationSVC/DownloadWatermarkedAttachment/attach_import_c6ad0f0c-5a28-4a66-a11d-ab0a4aa3b6e0%3F_%3D398030eng.pdf&locale=en&multi=true&ark=/ark:/48223/pf0000398030/PDF/398030eng.pdf#%5B%7B%22num%22%3A18%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D)
 
 ```{r}
-ati <- data.frame(response = c("Yes", "No", "In progress"), value = c(115, 4, 4))
+ati <- data.frame(response = c("Yes", "In progress", "No"), value = c(115, 4, 4))
+
+ati |>
+mutate(response = factor(response, levels = c("Yes", "In progress", "No"))) |>
+arrange(desc(response)) |>
+mutate( 
+half = value/2, 
+csum = cumsum(lag(value, default = 0)), 
+pos = ifelse(response == "No", 1, csum + half)) |>
+ggplot(aes(y = "2024", x = value, fill = response, color = response)) + 
+geom_col(aes(width = 1)) +
+scale_color_manual(values = c("No" = "#B5515B", "In progress" = "#C5C8D4", "Yes" = "#4D7799")) + 
+scale_fill_manual(values = c("No" = "#B5515B", "In progress" = "#C5C8D4", "Yes" = "#4D7799")) + 
+geom_text(aes(x = pos, label = response), hjust = 0, vjust = 1, nudge_y = -.55, size = 6) + 
+geom_text(aes(x = pos, label = value), , color = "white", hjust = 0, vjust = .5, size = 6) + 
+scale_y_discrete(expand = expansion(add = 5)) +
+scale_x_continuous(expand = c(0, 0)) +
+theme_nothing()
 ```
 
 The actual indicator is a survey of 8 questions, each scored 0 to 2, allowing a total score from 0 to 9. 
@@ -57,7 +96,6 @@ The actual indicator is a survey of 8 questions, each scored 0 to 2, allowing a 
 26 of 123 respondents scored below 4.5. Average score was 6.32/9. 
 
 Each country's score is available in PDF format so we'd have to download each country individually to obtain analyses further than what is in their 2025 report. 
-
 
 # killings, disappearances, etc. of HRDs
 
@@ -107,6 +145,7 @@ plots = list()
 
 for (attack in unique(attacks$name)) {
     num_attacks <- attacks |> filter(name == attack, at_least_1 == "At least 1 attack") |> pull(at_least_1_n)
+    print(paste0("There were ", attacks |> filter(name == attack) |> pull(at_least_1_n) |> sum(), " countries with data, and ", num_attacks, " with attacks"))
 
 plots[[attack]] <- attacks |>
 filter(name == attack) |>
@@ -196,6 +235,17 @@ filter(dimensions.Sex == "BOTHSEX", timePeriodStart %in% c(2019, 2024)) |>
     theme(legend.position = "top", legend.direction = "vertical")
 ```
 
+For d3:
+```{r}
+rbind(world_ed, world_k) |> 
+filter(dimensions.Sex == "BOTHSEX", timePeriodStart %in% c(2019, 2024)) |> 
+mutate(cat = case_when(str_detect(attackType, "Kill") ~ "kil", 
+.default = "edis")) |>
+select(timePeriodStart, cat, value) |>
+rename(year = timePeriodStart) |>
+pivot_wider(names_from = cat, values_from = value) |>
+write.csv(paste0(out, "/d3_pictogram_FOE.csv"), row.names = FALSE)
+```
 I think it might be really interesting/hit harder to have a visualization that keeps going to show the scale
 
 ```{r}
@@ -247,4 +297,65 @@ ggplot(aes(x = value, y = forcats::fct_reorder(stringr::str_wrap(geoAreaName, 20
 geom_col(fill = "#006fb7") + 
 theme_ghro_bar("horizontal", font_size = 28, x_label = "Number of enforced disappearances\nof human rights defenders") + 
 theme(text = element_text(lineheight = .6))
+```
+
+```{r}
+killings_regions <-  killings |> filter(geoAreaName != "World", timePeriodStart == 2024, dimensions.Sex == "BOTHSEX") |>  mutate(value = as.integer(value)) |> filter( !is.na(value))
+
+killings_regions |> 
+ggplot(aes(x = value, y = forcats::fct_reorder(stringr::str_wrap(geoAreaName, 20), value))) + 
+geom_col(fill = "#006fb7") + 
+theme_ghro_bar("horizontal", font_size = 28, x_label = "Number of killings\nof human rights defenders") + 
+theme(text = element_text(lineheight = .6))
+```
+
+```{r regional-hrds-line}
+#| fig-height: 7
+
+hrds <- readxl::read_excel(here(raw, "hrd_killings_updated2025.xlsx")) |>
+filter(Sex == "BOTHSEX") |>
+select(-Goal, -Target, -Indicator, -SeriesCode, -Sex, -Units, -`Reporting Type`) |> 
+pivot_longer(cols = `2015`:`2025`, names_to = "year") |>
+mutate(value = as.numeric(value))
+
+world_pop <- 8300678396
+lac_pop <- 672135562
+nawa_pop <- 599872197
+cat("Latin America and the Caribbean is", scales::percent(lac_pop/world_pop), "of the world population.")
+cat("North Africa and Western Asia is", scales::percent(nawa_pop/world_pop), "of the world population.")
+
+hrds_ts <- hrds |> 
+filter(GeoAreaCode != 1, year != 2025)
+
+labels <- hrds_ts |> filter(year == 2024, GeoAreaName != "Oceania")
+
+hrds_ts |>
+filter(GeoAreaName != "Oceania") |>
+ggplot(aes(x = as.integer(year), y = value, color = GeoAreaName, group = GeoAreaName)) + 
+geom_line(linewidth = .75) + 
+ggrepel::geom_text_repel(data = labels, aes(label = str_wrap(GeoAreaName, 20)), hjust = 0, size = 8, lineheight = .5, xlim = c(2024, Inf)) +
+scale_color_ghro("cats2", guide = "none") +
+theme_ghro_line(font_size = 28) +
+scale_x_continuous(NULL, breaks = seq(2015, 2024, by = 3)) +
+scale_y_continuous("Number of human rights defenders killed") +
+theme(plot.margin = margin(r = 125, b = 5)) +
+coord_cartesian(clip = "off")
+```
+
+```{r}
+enf_dis_ts <- enf_dis |> 
+filter(geoAreaCode != 1, timePeriodStart > 2019, timePeriodStart != 2025, dimensions.Sex == "BOTHSEX", geoAreaName != "Oceania") |> select(geoAreaName, timePeriodStart, value) |>
+drop_na()
+labels <- enf_dis_ts |> filter(timePeriodStart == 2024)
+
+enf_dis_ts |>
+ggplot(aes(x = as.integer(timePeriodStart), y = value, color = geoAreaName, group = geoAreaName)) + 
+geom_line(linewidth = .75) + 
+ggrepel::geom_text_repel(data = labels, aes(label = str_wrap(geoAreaName, 20)), hjust = 0, size = 8, lineheight = .5, xlim = c(2024, Inf)) +
+scale_color_ghro("cats2", guide = "none") +
+theme_ghro_line(font_size = 28) +
+scale_x_continuous(NULL) +
+scale_y_continuous("Number of human rights defenders disappeared") +
+theme(plot.margin = margin(r = 125, b = 5)) +
+coord_cartesian(clip = "off")
 ```

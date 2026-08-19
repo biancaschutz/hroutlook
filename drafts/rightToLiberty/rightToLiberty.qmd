@@ -46,36 +46,6 @@ unsentenced <- getHRDx("VC_PRS_UNSNT", params = list(where = list(datetime = sel
 ghro_line("VC_PRS_UNSNT", label_format = "percent", scale_y_args = list(limits = c(25, 35)), theme_args = list(font_size = 28))
 ```
 
-1. % of prison population that is unsentenced has been increasing since 2010, was decreasing between 2016 and 2019, but then spiked to an all time high in 2021 of 31.7%, meaning that more than 3 in 10 inmates globally were unsentenced. Since 2021 it has declined, but remains above 30%.
-
-```{r}
-ghro_line("VC_PRS_UNSNT", level = "regional", line_args = list(linewidth = .75), theme_args = list(font_size = 28), region_label_size = 9) + theme(plot.margin = margin(r = 50))
-```
-
-2. Increase was most obvious in Oceania, highest in the world now
-
-```{r}
-ghro_region_bar("VC_PRS_UNSNT", theme_args = list(font_size = 28))
-```
-
-1. Nearly 40% in Oceania
-
-Gendered differences? 
-```{r}
-unsentenced |>
-filter(sexCode != "_T", datetime == max(datetime)) |> 
-inner_join(regions |> filter(level == 1), by = "regionId") |>
-ggplot(aes(x = value, y = fct_reorder(name, value))) + 
-geom_line(aes(group = name), linewidth = .75) +
-geom_point(aes(color = sexCode), size = 5) + 
-scale_color_ghro("gender", name = NULL, labels = c("F" = "Female", "M" = "Male")) + 
-theme_ghro_bar(orientation = "horizontal", font_size = 28) +
-theme(legend.position = "top") +
-scale_x_continuous("% of prison population that is unsentenced", labels = scales::percent_format(scale = 1))
-```
-
-1. Gender gap is large in Oceania and Africa - in both regions, women are about 1/4 more likely to be unsentenced than men
-
 # Human trafficking
 
 (VC_HTF_DETVR, VC_HTF_DETVSXR, VC_HTF_DETVOPR, VC_HTF_DETVOGR, VC_HTF_DETVFLR)

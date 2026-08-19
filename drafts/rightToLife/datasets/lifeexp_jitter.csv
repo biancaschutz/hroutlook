@@ -1,0 +1,236 @@
+"Value","name","Iso3","Location","y","y_jitter"
+66.7709,"Asia","AFG","Afghanistan",3,2.97126711858436
+80.1324,"Europe","ALB","Albania",4,3.98323436213347
+76.8904,"Africa","DZA","Algeria",1,1.00047295804446
+73.2547,"Oceania","ASM","American Samoa",5,5.12673169265812
+84.4608,"Europe","AND","Andorra",4,4.04508980736136
+65.1692,"Africa","AGO","Angola",1,1.07674536667764
+78.1124,"Americas","ATG","Antigua and Barbuda",2,1.95970956934616
+74.8882,"Asia","AZE","Azerbaijan",3,3.1644523057621
+77.8291,"Americas","ARG","Argentina",2,2.05416784831323
+84.3414,"Oceania","AUS","Australia",5,4.98082875895004
+82.4538,"Europe","AUT","Austria",4,3.89943293699374
+75.0108,"Americas","BHS","Bahamas",2,2.03715591761284
+81.7428,"Asia","BHR","Bahrain",3,3.01778587085816
+75.4677,"Asia","BGD","Bangladesh",3,3.054691900732
+76.1808,"Asia","ARM","Armenia",3,2.92224983987398
+76.645,"Americas","BRB","Barbados",2,1.88067148478391
+82.5902,"Europe","BEL","Belgium",4,3.99493778380565
+82.8251,"Americas","BMU","Bermuda",2,2.15742571419105
+73.7997,"Asia","BTN","Bhutan",3,3.11329910562684
+69.0652,"Americas","BOL","Bolivia (Plurinational State of)",2,1.86890482615369
+78.4205,"Europe","BIH","Bosnia and Herzegovina",4,3.86461472837254
+69.5736,"Africa","BWA","Botswana",1,0.958834957486639
+76.3738,"Americas","BRA","Brazil",2,2.04273975120547
+74.0816,"Americas","BLZ","Belize",2,1.92148218071088
+70.9775,"Oceania","SLB","Solomon Islands",5,4.97973122618472
+77.7565,"Americas","VGB","British Virgin Islands",2,1.90697253394562
+75.8334,"Asia","BRN","Brunei Darussalam",3,3.11162294858756
+76.1263,"Europe","BGR","Bulgaria",4,4.00558580962631
+67.4994,"Asia","MMR","Myanmar",3,3.0722793629393
+64.1381,"Africa","BDI","Burundi",1,0.866444825505217
+74.967,"Europe","BLR","Belarus",4,4.02060913325598
+71.1377,"Asia","KHM","Cambodia",3,2.88203792111017
+64.51,"Africa","CMR","Cameroon",1,1.01874353992753
+83.0533,"Americas","CAN","Canada",2,2.09859798902956
+76.5624,"Africa","CPV","Cabo Verde",1,1.13993957817244
+80.9029,"Americas","CYM","Cayman Islands",2,1.90713961026631
+58.1536,"Africa","CAF","Central African Republic",1,1.05642589158379
+78.0319,"Asia","LKA","Sri Lanka",3,3.10018758956964
+55.5809,"Africa","TCD","Chad",1,0.84756802340659
+81.7146,"Americas","CHL","Chile",2,2.12805707667333
+79.022,"Asia","CHN","China",3,3.07771361231183
+78.2719,"Americas","COL","Colombia",2,2.00360791633526
+67.4779,"Africa","COM","Comoros",1,1.09104349534027
+76.6118,"Africa","MYT","Mayotte",1,0.961773106983552
+66.4152,"Africa","COG","Congo",1,0.914898093712206
+62.3878,"Africa","COD","Democratic Republic of the Congo",1,0.988589927631741
+75.8472,"Oceania","COK","Cook Islands",5,4.83747430859755
+81.3829,"Americas","CRI","Costa Rica",2,1.93291212253583
+79.0926,"Europe","HRV","Croatia",4,3.9404648009222
+78.6244,"Americas","CUB","Cuba",2,2.00896131200716
+82.1527,"Asia","CYP","Cyprus",3,2.89887640423452
+80.2507,"Europe","CZE","Czechia",4,4.12351442423339
+61.3206,"Africa","BEN","Benin",1,0.976144893870999
+82.3853,"Europe","DNK","Denmark",4,4.10397273069248
+71.6177,"Americas","DMA","Dominica",2,2.11090959981084
+74.1203,"Americas","DOM","Dominican Republic",2,1.83826545292201
+77.9379,"Americas","ECU","Ecuador",2,2.11203719497037
+72.7428,"Americas","SLV","El Salvador",2,1.89555330465858
+64.2988,"Africa","GNQ","Equatorial Guinea",1,0.948224838202198
+68.1487,"Africa","ETH","Ethiopia",1,0.916485181466366
+69.3976,"Africa","ERI","Eritrea",1,0.976720631665861
+79.6369,"Europe","EST","Estonia",4,3.95833198850354
+80.8109,"Europe","FRO","Faroe Islands",4,4.13026866464255
+79.7809,"Americas","FLK","Falkland Islands (Malvinas)",2,1.87119330101026
+67.7711,"Oceania","FJI","Fiji",5,5.00027388598149
+82.4007,"Europe","FIN","Finland",4,4.0665796934627
+83.7029,"Europe","FRA","France",4,4.08441483826997
+77.5437,"Americas","GUF","French Guiana",2,1.83894413577703
+84.4377,"Oceania","PYF","French Polynesia",5,4.88261597432817
+66.6137,"Africa","DJI","Djibouti",1,1.12346352171153
+68.8769,"Africa","GAB","Gabon",1,0.854133578017354
+74.9777,"Asia","GEO","Georgia",3,3.07114078779705
+66.4506,"Africa","GMB","Gambia",1,1.10452154612479
+77.4228,"Asia","PSE","State of Palestine",3,2.86839448637329
+81.8629,"Europe","DEU","Germany",4,4.15363685429717
+66.0769,"Africa","GHA","Ghana",1,0.915687926191216
+83.9016,"Europe","GIB","Gibraltar",4,3.97339861281216
+66.858,"Oceania","KIR","Kiribati",5,4.86907751190787
+82.3953,"Europe","GRC","Greece",4,3.83411304846716
+70.4404,"Americas","GRL","Greenland",2,2.0010987604813
+75.6674,"Americas","GRD","Grenada",2,2.13497573075195
+82.5612,"Americas","GLP","Guadeloupe",2,2.04219398531131
+77.8118,"Oceania","GUM","Guam",5,5.13545980133737
+73.0429,"Americas","GTM","Guatemala",2,2.1366140327882
+61.2269,"Africa","GIN","Guinea",1,0.915606296155602
+70.5709,"Americas","GUY","Guyana",2,2.15273548740273
+65.452,"Americas","HTI","Haiti",2,1.91785673750564
+73.385,"Americas","HND","Honduras",2,1.85248708655126
+85.9024,"Asia","HKG","China, Hong Kong SAR",3,2.94404789044832
+77.4991,"Europe","HUN","Hungary",4,4.14679212340464
+83.3002,"Europe","ISL","Iceland",4,3.99772874677243
+72.7164,"Asia","IND","India",3,3.08710765908472
+71.5812,"Asia","IDN","Indonesia",3,2.87978012844299
+78.2485,"Asia","IRN","Iran (Islamic Republic of)",3,2.84304314029093
+72.632,"Asia","IRQ","Iraq",3,2.94539059869324
+82.9243,"Europe","IRL","Ireland",4,3.92044128112805
+82.8975,"Asia","ISR","Israel",3,3.05538250529207
+84.1761,"Europe","ITA","Italy",4,4.06762458694478
+62.4404,"Africa","CIV","Côte d'Ivoire",1,0.90298141236417
+71.856,"Americas","JAM","Jamaica",2,1.87668969676209
+85.1467,"Asia","JPN","Japan",3,2.89075418414238
+74.8069,"Asia","KAZ","Kazakhstan",3,3.12689625564963
+78.299,"Asia","JOR","Jordan",3,3.01280674617738
+64.1886,"Africa","KEN","Kenya",1,0.906349345886459
+73.9786,"Asia","PRK","Dem. People's Rep. of Korea",3,2.86633992140802
+84.6368,"Asia","KOR","Republic of Korea",3,2.96930356184021
+78.6092,"Europe","XKX","Kosovo (under UNSC res. 1244)",4,4.05824994846868
+80.965,"Asia","KWT","Kuwait",3,2.97687895347675
+72.1068,"Asia","KGZ","Kyrgyzstan",3,3.0118400673382
+69.7052,"Asia","LAO","Lao People's Democratic Republic",3,3.14361757684189
+78.2177,"Asia","LBN","Lebanon",3,3.04239562549628
+58.6331,"Africa","LSO","Lesotho",1,1.01546148078827
+76.6287,"Europe","LVA","Latvia",4,4.15496098801183
+62.6183,"Africa","LBR","Liberia",1,0.866235627171894
+75.1815,"Africa","LBY","Libya",1,0.999445994462197
+84.0578,"Europe","LIE","Liechtenstein",4,4.03454229359825
+76.4804,"Europe","LTU","Lithuania",4,3.98421150453699
+82.6357,"Europe","LUX","Luxembourg",4,3.93081076163799
+83.601,"Asia","MAC","China, Macao SAR",3,2.97850417920078
+64.2532,"Africa","MDG","Madagascar",1,1.11081733383859
+67.92,"Africa","MWI","Malawi",1,1.02653418628809
+77.1581,"Asia","MYS","Malaysia",3,2.875407939932
+81.7297,"Asia","MDV","Maldives",3,3.13365488445076
+61.1096,"Africa","MLI","Mali",1,1.09211927272069
+83.7817,"Europe","MLT","Malta",4,3.96066019870341
+83.0445,"Americas","MTQ","Martinique",2,1.97575948449473
+69.1548,"Africa","MRT","Mauritania",1,1.02090280386619
+75.4418,"Africa","MUS","Mauritius",1,0.961464739559839
+75.6291,"Americas","MEX","Mexico",2,1.93318696560649
+86.7344,"Europe","MCO","Monaco",4,3.89602287556045
+72.487,"Asia","MNG","Mongolia",3,3.15139872417785
+71.5964,"Europe","MDA","Republic of Moldova",4,4.04817758873105
+77.6025,"Europe","MNE","Montenegro",4,3.84833592486878
+76.6607,"Americas","MSR","Montserrat",2,2.09598522648836
+75.8591,"Africa","MAR","Morocco",1,1.08500577462837
+64.1386,"Africa","MOZ","Mozambique",1,0.986492298155402
+80.6524,"Asia","OMN","Oman",3,2.98050516595443
+67.8046,"Africa","NAM","Namibia",1,1.08884852317472
+62.6105,"Oceania","NRU","Nauru",5,4.95371776695053
+71.1643,"Asia","NPL","Nepal",3,2.92558971924397
+82.6079,"Europe","NLD","Netherlands",4,3.86527675638596
+77.3417,"Americas","CUW","Curaçao",2,2.10939171731782
+76.7846,"Americas","ABW","Aruba",2,1.88798376296957
+76.8583,"Americas","SXM","Sint Maarten (Dutch part)",2,2.1431346317598
+77.9548,"Americas","BES","Bonaire, Sint Eustatius and Saba",2,2.08082831992457
+79.2308,"Oceania","NCL","New Caledonia",5,5.09626153949648
+72.0206,"Oceania","VUT","Vanuatu",5,4.87433210411109
+82.5234,"Oceania","NZL","New Zealand",5,5.00847148763326
+75.4288,"Americas","NIC","Nicaragua",2,2.14672702581932
+61.8817,"Africa","NER","Niger",1,1.12072582426481
+54.9528,"Africa","NGA","Nigeria",1,1.15660390234552
+70.3547,"Oceania","NIU","Niue",5,4.89421971258707
+83.7612,"Europe","NOR","Norway",4,4.02038452580261
+79.2249,"Oceania","MNP","Northern Mariana Islands",5,4.92000195096868
+67.6501,"Oceania","FSM","Micronesia (Fed. States of)",5,5.09016763488762
+67.3197,"Oceania","MHL","Marshall Islands",5,4.99029201401087
+69.6049,"Oceania","PLW","Palau",5,5.11190301529132
+68.0653,"Asia","PAK","Pakistan",3,2.94322928561208
+80.1485,"Americas","PAN","Panama",2,2.10566404601559
+66.5055,"Oceania","PNG","Papua New Guinea",5,4.8670321193058
+74.2377,"Americas","PRY","Paraguay",2,2.00330317718908
+78.2969,"Americas","PER","Peru",2,1.98910209195067
+70.1744,"Asia","PHL","Philippines",3,2.84916956148421
+79.152,"Europe","POL","Poland",4,3.84566368558444
+82.8932,"Europe","PRT","Portugal",4,3.99283879203722
+64.5861,"Africa","GNB","Guinea-Bissau",1,1.15470482913467
+68.3343,"Asia","TLS","Timor-Leste",3,2.93101432616822
+82.2646,"Americas","PRI","Puerto Rico",2,2.09802658467864
+82.8268,"Asia","QAT","Qatar",3,3.13131359025526
+83.9209,"Africa","REU","Réunion",1,1.10300129923659
+76.3965,"Europe","ROU","Romania",4,3.94858859137942
+73.7023,"Europe","RUS","Russian Federation",4,4.14473865786567
+68.4653,"Africa","RWA","Rwanda",1,1.05566435594422
+84.6288,"Americas","BLM","Saint Barthélemy",2,2.06012947143366
+77.2952,"Africa","SHN","Saint Helena",1,1.03975363393935
+72.5839,"Americas","KNA","Saint Kitts and Nevis",2,2.08957772748545
+79.8627,"Americas","AIA","Anguilla",2,1.96716284588911
+73.1506,"Americas","LCA","Saint Lucia",2,2.12793699768372
+80.8471,"Americas","MAF","Saint Martin (French part)",2,1.9706047118331
+77.28,"Americas","SPM","Saint Pierre and Miquelon",2,1.85956412677964
+71.6516,"Americas","VCT","Saint Vincent and the Grenadines",2,1.87418347566078
+86.0317,"Europe","SMR","San Marino",4,4.14306515463007
+70.2623,"Africa","STP","Sao Tome and Principe",1,1.00199609994888
+79.3996,"Asia","SAU","Saudi Arabia",3,3.05794763037314
+69.3873,"Africa","SEN","Senegal",1,1.0998467230238
+77.3277,"Europe","SRB","Serbia",4,4.05516419955529
+73.2799,"Africa","SYC","Seychelles",1,0.887270643686255
+62.329,"Africa","SLE","Sierra Leone",1,1.06776268927691
+84.1281,"Asia","SGP","Singapore",3,3.06941048242152
+78.8144,"Europe","SVK","Slovakia",4,3.87783294380642
+75.0486,"Asia","VNM","Viet Nam",3,3.09840479167178
+82.0954,"Europe","SVN","Slovenia",4,3.93926519147741
+59.2632,"Africa","SOM","Somalia",1,1.12148001316624
+66.6561,"Africa","ZAF","South Africa",1,0.925746783070887
+63.6289,"Africa","ZWE","Zimbabwe",1,0.919794649428998
+84.0829,"Europe","ESP","Spain",4,4.07706042169593
+57.9694,"Africa","SSD","South Sudan",1,1.07344585470855
+66.8896,"Africa","SDN","Sudan",1,1.09145809919573
+71.976,"Africa","ESH","Western Sahara",1,0.920126852967466
+74.0404,"Americas","SUR","Suriname",2,2.12833781059211
+64.544,"Africa","SWZ","Eswatini",1,0.847739576982955
+83.7285,"Europe","SWE","Sweden",4,3.89007430383936
+84.3664,"Europe","CHE","Switzerland",4,4.10701114257487
+73.4268,"Asia","SYR","Syrian Arab Republic",3,2.94770073805315
+72.1879,"Asia","TJK","Tajikistan",3,2.91457653930411
+77.0606,"Asia","THA","Thailand",3,2.83672752239121
+63.3278,"Africa","TGO","Togo",1,1.07118714887959
+77.4145,"Oceania","TKL","Tokelau",5,4.98831949615851
+73.3937,"Oceania","TON","Tonga",5,5.01684958666253
+73.8867,"Americas","TTO","Trinidad and Tobago",2,2.08255842661796
+83.3899,"Asia","ARE","United Arab Emirates",3,2.86654290168857
+77.1017,"Africa","TUN","Tunisia",1,0.890690749433512
+78.3774,"Asia","TUR","Türkiye",3,3.16568039101548
+70.4545,"Asia","TKM","Turkmenistan",3,2.91359024766522
+78.5002,"Americas","TCA","Turks and Caicos Islands",2,2.07722204636472
+67.5641,"Oceania","TUV","Tuvalu",5,5.0490811689912
+68.9207,"Africa","UGA","Uganda",1,1.03508397059826
+75.0197,"Europe","UKR","Ukraine",4,3.91944412638744
+77.8144,"Europe","MKD","North Macedonia",4,4.03114758882051
+72.1627,"Africa","EGY","Egypt",1,0.908580704359338
+81.7497,"Europe","GBR","United Kingdom",4,3.86260143380302
+83.6691,"Europe","GGY","Guernsey",4,3.94501186503718
+80.1404,"Europe","JEY","Jersey",4,3.88323115254752
+81.3846,"Europe","IMN","Isle of Man",4,3.88032855303027
+67.6344,"Africa","TZA","United Republic of Tanzania",1,1.03368396180061
+79.7579,"Americas","USA","United States of America",2,2.06781414058059
+76.1531,"Americas","VIR","United States Virgin Islands",2,1.87170774691428
+61.647,"Africa","BFA","Burkina Faso",1,0.854236374453952
+78.6158,"Americas","URY","Uruguay",2,2.06812125258148
+72.7818,"Asia","UZB","Uzbekistan",3,3.1395202378432
+73.0085,"Americas","VEN","Venezuela (Bolivarian Republic of)",2,1.9419032582858
+79.0327,"Oceania","WLF","Wallis and Futuna Islands",5,5.16434709549261
+72.08,"Oceania","WSM","Samoa",5,4.90164101271269
+69.7303,"Asia","YEM","Yemen",3,2.9898548113027
+66.8782,"Africa","ZMB","Zambia",1,0.866741839097813
