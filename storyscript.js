@@ -26,7 +26,6 @@
 }
 window.addEventListener('scroll', updateCards, { passive: true });
 window.addEventListener('resize', updateCards);
-updateCards();
 
   let tocId = 'toc';
 
