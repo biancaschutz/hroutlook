@@ -159,4 +159,10 @@ updateCards();
     }
   });
 
-    window.addEventListener('load', updateCards);
+updateCards();
+
+requestAnimationFrame(() => {
+
+document.documentElement.classList.add('transitions-enabled');
+
+});
