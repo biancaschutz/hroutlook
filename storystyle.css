@@ -21,6 +21,10 @@ html {
     will-change: opacity, transform;
 }
 
+.transitions-enabled .intro-card {
+    transition: opacity 0.2s linear, transform 0.2s linear;
+}
+
 .story-nav#toc a {
     color: black;
     text-decoration: none;
