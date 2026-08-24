@@ -158,3 +158,5 @@ updateCards();
       observeHeadings();
     }
   });
+
+    window.addEventListener('load', updateCards);
